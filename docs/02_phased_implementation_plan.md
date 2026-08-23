@@ -1,0 +1,479 @@
+# Phased Implementation Plan — Phases 3–16
+
+Status: **Planning document only — no implementation in this document.**
+Date: 2026-08-23
+
+This is the required per-phase breakdown (§34 of `01_plan_prompt.md`): every phase carries Objective, Inputs, Changes, Files created, Files modified, Dependencies, Validation, Tests, Known risks, Rollback strategy, and Exit criteria. Phases 0–2 are already implemented and validated — see `00_phase0_discovery.md` and the chat report for their results. Nothing below has been built yet; each phase starts only once the prior one is reviewed and approved.
+
+Reference: package dependency graph and risk register from Phase 0 still apply and are not repeated per-phase except where a phase adds a new risk.
+
+---
+
+## Phase 3 — `@workspace/config`
+
+**Objective:** Centralize TypeScript, ESLint, and Prettier configuration into one shared package, replacing the leftover `@repo/eslint-config` and `@repo/typescript-config`.
+
+**Inputs:** Existing `packages/eslint-config`, `packages/typescript-config` (untouched since Phase 1); Expo SDK 57's own `expo/tsconfig.base`; each app's current standalone `tsconfig.json`.
+
+**Changes:**
+- Merge `eslint-config` + `typescript-config` into a single `packages/config` package (per spec §12, one package, not two).
+- Provide `tsconfig.base.json` (framework-agnostic strict TS) and `tsconfig.expo.json` (extends Expo's own base, for apps).
+- Provide a flat ESLint config (`eslint.config.mjs`) covering TS + React Native + import-order rules, split into a base ruleset and an Expo/React Native overlay.
+- Provide a shared `prettier.config.js`.
+- Repoint each app's `tsconfig.json` to `extends: "@workspace/config/tsconfig.expo.json"`.
+- Add root `tsconfig.json` project references to every package/app once each has its own `tsconfig.json`.
+
+**Files created:**
+```
+packages/config/package.json
+packages/config/tsconfig.base.json
+packages/config/tsconfig.expo.json
+packages/config/eslint.config.mjs
+packages/config/eslint.expo.mjs
+packages/config/prettier.config.js
+```
+
+**Files modified:**
+```
+apps/app-one/tsconfig.json, apps/app-two/tsconfig.json, apps/app-three/tsconfig.json
+tsconfig.json (root — add references)
+```
+Files removed: `packages/eslint-config/**`, `packages/typescript-config/**` (superseded).
+
+**Dependencies added:** `typescript-eslint`, `eslint-plugin-react`, `eslint-plugin-react-hooks`, `eslint-config-expo` (Expo's official flat config base, if compatible with SDK 57), `prettier`.
+
+**Validation:** `pnpm lint` and `pnpm typecheck` from root succeed across all apps; each app's `tsc --noEmit` resolves the shared base without path errors; ESLint reports zero unexpected errors on the freshly generated app-one/two/three source.
+
+**Tests:** N/A (config package — validated by consuming packages passing lint/typecheck, not unit tests).
+
+**Known risks:** Expo's official ESLint flat config may not yet be compatible with ESLint 9's config shape used by the old `@repo/eslint-config`; version mismatch would require picking one lineage explicitly rather than merging blindly.
+
+**Rollback:** Revert to the per-app default `tsconfig.json`/no shared ESLint (i.e., keep Phase 1/2 state); no other phase depends on `@workspace/config` internals beyond import paths, so rollback is isolated.
+
+**Exit criteria:** `pnpm lint`, `pnpm typecheck` clean from repo root; no app has a local, duplicated ESLint/TS config.
+
+---
+
+## Phase 4 — `@workspace/theme`
+
+**Objective:** Centralized design tokens (colors, spacing, typography, font weights, radius, shadows, breakpoints, elevation/z-index) as a pure, dependency-free package.
+
+**Inputs:** None (net-new); informs Phase 5 (`ui`) token consumption.
+
+**Changes:** New package exporting a typed token object plus light/dark palettes. React Native `StyleSheet`-oriented (no NativeWind).
+
+**Files created:**
+```
+packages/theme/package.json
+packages/theme/src/index.ts
+packages/theme/src/colors.ts
+packages/theme/src/spacing.ts
+packages/theme/src/typography.ts
+packages/theme/src/radius.ts
+packages/theme/src/shadows.ts
+packages/theme/src/elevation.ts
+```
+
+**Files modified:** none outside `packages/theme`.
+
+**Dependencies added:** none beyond `@workspace/config` (dev-only, for tsconfig/eslint).
+
+**Validation:** `pnpm --filter @workspace/theme typecheck`; import `{ theme }` from a throwaway snippet in one app to confirm resolution (`import { colors } from '@workspace/theme'`), then remove the snippet.
+
+**Tests:** Unit tests asserting token shape (e.g., every color has a value, spacing scale is monotonic) — lightweight, via the test runner chosen in Phase 12 groundwork (Jest config introduced here just for this package, formalized repo-wide in Phase 12).
+
+**Known risks:** Low — no native/runtime dependencies.
+
+**Rollback:** Delete `packages/theme`; nothing else exists yet to depend on it at this point in the sequence.
+
+**Exit criteria:** Package builds/typechecks; importable from an app via `@workspace/theme`, not a relative path.
+
+---
+
+## Phase 5 — `@workspace/ui`
+
+**Objective:** Atomic, theme-driven, business-logic-free UI component library: `Button`, `Input`, `Card`, `Typography`, `IconButton`, `Divider`, `Avatar`, `Badge`, `Loader`, `EmptyState`, `ErrorState`, `Modal`, and a `BottomSheet` abstraction if a suitable dependency is vetted.
+
+**Inputs:** `@workspace/theme` (Phase 4).
+
+**Changes:** New package; every component typed, accessible (`accessibilityRole`/`accessibilityLabel`/`accessibilityState`), with disabled/loading states where relevant, styled via `StyleSheet` and theme tokens only — no API or navigation imports.
+
+**Files created:**
+```
+packages/ui/package.json
+packages/ui/src/index.ts
+packages/ui/src/Button/Button.tsx (+ .test.tsx)
+packages/ui/src/Input/Input.tsx (+ .test.tsx)
+packages/ui/src/Card/Card.tsx
+packages/ui/src/Typography/Typography.tsx
+packages/ui/src/IconButton/IconButton.tsx
+packages/ui/src/Divider/Divider.tsx
+packages/ui/src/Avatar/Avatar.tsx
+packages/ui/src/Badge/Badge.tsx
+packages/ui/src/Loader/Loader.tsx
+packages/ui/src/EmptyState/EmptyState.tsx
+packages/ui/src/ErrorState/ErrorState.tsx
+packages/ui/src/Modal/Modal.tsx
+packages/ui/src/BottomSheet/BottomSheet.tsx   (only if a New-Architecture-compatible dependency, e.g. @gorhom/bottom-sheet, checks out in Phase 5 dependency vetting)
+```
+
+**Files modified:** none outside `packages/ui`.
+
+**Dependencies added:** `react-native-svg` or icon set (for `IconButton`/`Avatar` fallback) — vetted for New Architecture/Expo Go compatibility before adding; `@gorhom/bottom-sheet` only if `BottomSheet` is included (requires `react-native-reanimated`, already present via the app template — needs a Development Build, not Expo Go, once added).
+
+**Validation:** `pnpm --filter @workspace/ui typecheck`; render each component in one app's screen temporarily via `expo start --web` to visually confirm no crashes; remove the temporary screen after.
+
+**Tests:** Component tests (React Native Testing Library) for interactive components (`Button` press states, `Input` value/onChange, `Modal` open/close) — introduced here, formalized in Phase 12.
+
+**Known risks:** `BottomSheet` dependency requires a Development Build even in `Expo Go`-friendly early testing — flag clearly in package README so app teams aren't surprised later (Phase 11 native validation is where this actually gets exercised).
+
+**Rollback:** Ship without `BottomSheet` first (defer to a later minor addition) if the dependency check fails; the rest of the component set has no such constraint.
+
+**Exit criteria:** All listed components implemented, typed, accessible, importable as `@workspace/ui`, and pass component tests.
+
+---
+
+## Phase 6 — `@workspace/storage`
+
+**Objective:** MMKV-backed key-value storage for non-sensitive local/persistent data, with a documented, honest dev/test fallback.
+
+**Inputs:** MMKV v4 (NitroModules-based) — confirmed New Architecture compatible; **not supported in Expo Go**, requires a Development Build (Phase 0 discovery).
+
+**Changes:** Storage interface (`get`/`set`/`delete`/`clear`, typed) backed by `react-native-mmkv` in native builds; an in-memory fallback used only in Jest/unit-test environments and explicitly documented as non-persistent (never presented as a production substitute).
+
+**Files created:**
+```
+packages/storage/package.json
+packages/storage/src/index.ts
+packages/storage/src/mmkvStorage.ts
+packages/storage/src/memoryStorage.ts        (test/dev fallback, clearly labeled non-persistent)
+packages/storage/src/types.ts
+packages/storage/README.md                    (documents fallback limitations explicitly)
+```
+
+**Dependencies added:** `react-native-mmkv` (v4.x) + peer `react-native-nitro-modules`.
+
+**Validation:** `pnpm --filter @workspace/storage typecheck`; a Development Build smoke test in Phase 11 (native validation) is the real proof — this phase alone cannot validate native MMKV behavior in Expo Go.
+
+**Tests:** Unit tests against the memory fallback (interface contract only); native MMKV behavior is exercised in Phase 11, not here, since it requires a Development Build.
+
+**Known risks:** Team continuing to use `expo start` (Expo Go) without a Development Build will silently hit "module not found" for MMKV — mitigated by failing loudly with a clear error message from the storage package rather than a cryptic native crash, plus README callout.
+
+**Rollback:** Fall back to `@react-native-async-storage/async-storage` if MMKV/NitroModules prove incompatible with SDK 57 during Phase 11 — documented as a contingency, not the default plan.
+
+**Exit criteria:** Interface typed and exported as `@workspace/storage`; fallback behavior unit-tested; native behavior deferred to and tracked in Phase 11.
+
+---
+
+## Phase 7 — `@workspace/auth`
+
+**Objective:** Authentication session lifecycle — login/logout, JWT decode, access/refresh token handling, SecureStore-backed persistence, session restoration on app start.
+
+**Inputs:** `expo-secure-store` (bundled with SDK 57); `@workspace/storage` (Phase 6, for non-sensitive session metadata only, never tokens).
+
+**Changes:** Session manager exposing an interface (`getAccessToken`, `getRefreshToken`, `setSession`, `clearSession`, `onSessionChange`) designed so `@workspace/api` (Phase 8) consumes it by dependency inversion — no direct `auth → api` or `api → auth` circular import.
+
+**Files created:**
+```
+packages/auth/package.json
+packages/auth/src/index.ts
+packages/auth/src/secureStore.ts
+packages/auth/src/session.ts
+packages/auth/src/jwt.ts                     (decode-only, no verification — server is source of truth)
+packages/auth/src/types.ts
+```
+
+**Dependencies added:** `expo-secure-store` (already ships with SDK 57 apps, added explicitly here as a package-level dependency); a lightweight JWT decode library (no server-side verification logic in-app).
+
+**Validation:** `pnpm --filter @workspace/auth typecheck`; SecureStore behavior validated on a real Development Build in Phase 11 (SecureStore has no meaningful web/simulator-only substitute for production behavior — document this limitation explicitly, do not fake it).
+
+**Tests:** Unit tests for JWT decode edge cases (malformed token, expired `exp` claim) and session state transitions, using a mocked SecureStore adapter.
+
+**Known risks:** Circular dependency temptation between `auth` and `api` (refresh calls need the API client; API client needs tokens from auth) — resolved via an injected `TokenProvider` interface owned by `auth`, consumed by `api`, not the reverse.
+
+**Rollback:** N/A — no prior phase depends on `auth` yet.
+
+**Exit criteria:** Session lifecycle fully typed and unit-tested; zero import cycle with `api` (enforced by an ESLint import-cycle rule from `@workspace/config`, Phase 3).
+
+---
+
+## Phase 8 — `@workspace/api`
+
+**Objective:** Axios-based HTTP client with base URL config, interceptors, JWT-aware auth headers, single-flight refresh-on-401 with concurrent-request protection, normalized error model, timeout, and network-error handling.
+
+**Inputs:** `@workspace/auth`'s `TokenProvider` interface (Phase 7) — consumed, not imported circularly.
+
+**Changes:**
+- Axios instance factory with interceptors for auth header injection and error normalization.
+- 401 handling: on first 401, trigger one refresh; concurrent requests that 401 while a refresh is in-flight queue and retry after it resolves, rather than each triggering their own refresh call.
+- On refresh failure: clear session via the injected `TokenProvider.clearSession()`, propagate a normalized `SESSION_EXPIRED` error for the app shell to react to (logout/redirect), per §20/§21.
+- Normalized `ApiError` type (`NETWORK`, `TIMEOUT`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `VALIDATION`, `RATE_LIMITED`, `SERVER`, `UNKNOWN`) so UI never touches raw Axios errors.
+
+**Files created:**
+```
+packages/api/package.json
+packages/api/src/index.ts
+packages/api/src/client.ts
+packages/api/src/interceptors/auth.ts
+packages/api/src/interceptors/refresh.ts       (single-flight refresh queue)
+packages/api/src/errors.ts                     (normalization + ApiError type)
+packages/api/src/types.ts
+```
+
+**Dependencies added:** `axios`.
+
+**Validation:** `pnpm --filter @workspace/api typecheck`.
+
+**Tests:** This package carries the highest correctness bar per §28 ("at minimum test... token refresh"). Unit tests (mocked Axios via `axios-mock-adapter` or MSW): single request 401→refresh→retry; N concurrent requests during one in-flight refresh trigger exactly one refresh call; refresh failure clears session and surfaces `SESSION_EXPIRED`; each normalized error code maps correctly from representative Axios/network failures (timeout, ECONNABORTED, no network, 4xx/5xx family).
+
+**Known risks:** Getting single-flight refresh wrong (either duplicate refresh calls or a stuck queue on refresh failure) is the highest-impact bug class in this whole package graph — mitigated entirely through the test list above before this phase is considered done.
+
+**Rollback:** N/A — first consumer (apps' data layer) isn't wired until Phase 10.
+
+**Exit criteria:** All refresh/concurrency/error-normalization tests pass; zero `auth`↔`api` circular import (lint-enforced).
+
+---
+
+## Phase 9 — `@workspace/hooks` and `@workspace/utils`
+
+**Objective:** Small, genuinely reusable hook and utility libraries — explicitly scoped to avoid becoming dumping grounds (§8/§9).
+
+**Inputs:** None beyond `@workspace/config`.
+
+**Changes:**
+- `hooks`: `useNetworkStatus`, `useDebounce`, `useKeyboard`, `useAppState`, `useIsMounted`, `usePrevious`.
+- `utils`: date formatting, currency formatting, validation helpers, string helpers, number helpers, error helpers — framework-independent, minimal dependencies.
+
+**Files created:**
+```
+packages/hooks/package.json
+packages/hooks/src/index.ts
+packages/hooks/src/useNetworkStatus.ts (+ .test.ts)
+packages/hooks/src/useDebounce.ts (+ .test.ts)
+packages/hooks/src/useKeyboard.ts
+packages/hooks/src/useAppState.ts
+packages/hooks/src/useIsMounted.ts
+packages/hooks/src/usePrevious.ts
+
+packages/utils/package.json
+packages/utils/src/index.ts
+packages/utils/src/date.ts (+ .test.ts)
+packages/utils/src/currency.ts (+ .test.ts)
+packages/utils/src/validation.ts (+ .test.ts)
+packages/utils/src/string.ts (+ .test.ts)
+packages/utils/src/number.ts (+ .test.ts)
+packages/utils/src/error.ts (+ .test.ts)
+```
+
+**Dependencies added:** `@react-native-community/netinfo` (for `useNetworkStatus` — vetted for New Architecture/Expo SDK 57 compatibility first); a date library only if native `Intl`/`Date` formatting proves insufficient (prefer zero-dependency).
+
+**Validation:** `pnpm --filter @workspace/hooks --filter @workspace/utils typecheck`.
+
+**Tests:** Full unit coverage on `utils` (pure functions — easy, high-value); hook tests via `@testing-library/react-hooks`-equivalent for RN.
+
+**Known risks:** Scope creep — explicit exit criterion below guards against it.
+
+**Rollback:** N/A, additive only.
+
+**Exit criteria:** Only the listed hooks/utils exist (no speculative additions); all have unit tests; `pnpm test` green.
+
+---
+
+## Phase 10 — Application Architecture
+
+**Objective:** Wire the shared packages into each app via feature-oriented structure, Expo Router for navigation only (no business logic in route files), providers, services, and TanStack Query for server state.
+
+**Inputs:** All of Phases 3–9.
+
+**Changes (per app — app-one/two/three):**
+- `src/app/` — Expo Router route files, thin, delegate to `features/*/screens`.
+- `src/features/<feature>/{api,components,hooks,screens,types.ts,validation.ts}` — starting with an `auth` feature (login/logout screen using `@workspace/auth` + `@workspace/api`) as the reference implementation other features copy.
+- `src/providers/` — `QueryClientProvider` (TanStack Query), auth session provider, theme provider.
+- `src/services/` — app-level service wiring (e.g., the concrete Axios client instance configured with this app's base URL, injected into `@workspace/api`'s factory).
+- `src/config/`, `src/constants/` — per-app environment-driven config (ties into Phase 24's environment strategy, not duplicated here).
+
+**Files created:** New `src/` tree per app (structure above); each app's root layout (`src/app/_layout.tsx`) wraps providers.
+
+**Files modified:** Each app's `package.json` (add `@workspace/*` and `@tanstack/react-query` dependencies), existing template route files replaced by the feature-oriented structure.
+
+**Dependencies added:** `@tanstack/react-query` (per app, or hoisted at workspace root if version-pinned identically across apps).
+
+**Validation:** `expo export --platform web` per app succeeds against the new structure (as already proven possible in Phase 2); manual login-flow walkthrough once a real or mock API endpoint is available.
+
+**Tests:** Integration test for the auth feature (login → token stored → protected route accessible → logout → token cleared), using the mocked API client from Phase 8's test harness.
+
+**Known risks:** Without a real backend, the login flow can only be validated against a mock; document this explicitly rather than claiming full integration coverage.
+
+**Rollback:** Per-feature — each feature folder is independent; a broken feature doesn't block the others since Expo Router routes are isolated files.
+
+**Exit criteria:** At least the `auth` feature fully wired end-to-end (mocked backend) in all three apps; route files contain no business logic; TanStack Query owns all server state.
+
+---
+
+## Phase 11 — Native / CNG Validation
+
+**Objective:** Prove the whole dependency graph (MMKV/NitroModules, SecureStore, any UI native deps like BottomSheet) actually builds and runs as native code, not just typechecks.
+
+**Inputs:** All shared packages consumed by at least one app (post-Phase 10).
+
+**Changes:** No new source files — this phase runs `expo prebuild` and produces Development Builds.
+
+**Commands:**
+```
+pnpm --filter @workspace/app-one exec expo prebuild --clean
+pnpm --filter @workspace/app-one exec expo run:ios      (requires macOS + Xcode)
+pnpm --filter @workspace/app-one exec expo run:android  (requires Android SDK)
+```
+
+**Files created:** `apps/app-one/ios/`, `apps/app-one/android/` (generated, gitignored per Phase 1's `.gitignore` — CNG regenerates them, not hand-maintained).
+
+**Dependencies added:** none new; this phase validates what Phases 6/7/8 already added.
+
+**Validation:** App launches on iOS Simulator and Android Emulator; MMKV read/write round-trips; SecureStore persists across app restarts; login flow (Phase 10) works on-device, not just in Metro web export.
+
+**Tests:** Manual smoke test checklist (documented, not automated) — automated E2E is Phase 12's responsibility, not this one.
+
+**Known risks:** This is the phase most likely to surface real incompatibilities (NitroModules build errors, config-plugin conflicts) that couldn't be caught by typecheck/lint alone — **this environment cannot execute `expo run:ios`/`run:android` directly** (no macOS/Xcode or Android SDK confirmed available here), so this phase's native execution must happen on a machine with those toolchains, or via `eas build --profile development`.
+
+**Rollback:** If MMKV/NitroModules fail to build, fall back per Phase 6's documented contingency (AsyncStorage) before retrying prebuild.
+
+**Exit criteria:** Clean prebuild + successful Development Build launch on both platforms, with the native-dependent features (storage, auth, any native UI) manually verified working on-device.
+
+---
+
+## Phase 12 — Testing
+
+**Objective:** Formalize the unit/component tests already written ad hoc in Phases 4–9 into one coherent, repo-wide test setup, plus define the E2E strategy.
+
+**Inputs:** Jest usage already implied by earlier phases' "Tests" sections.
+
+**Changes:**
+- Root Jest config (`jest.config.base.js` in `@workspace/config`, extended per package/app) using `jest-expo` preset for apps.
+- `test` script wired into every package/app `package.json`, orchestrated via `turbo run test`.
+- E2E strategy: **Maestro** recommended (YAML-based, no native test-target boilerplate, works well with Expo Development Builds and CI) over Detox (heavier native setup) — one flow (`login.yaml`) as the reference E2E test, not a full suite, per §28's "do not introduce five frameworks" guidance.
+
+**Files created:**
+```
+packages/config/jest.config.base.js
+apps/app-one/.maestro/login.yaml   (reference flow; app-two/three follow once app-one's is proven)
+```
+
+**Files modified:** every package/app `package.json` (`test` script), `turbo.json` (already has a `test` task from Phase 1 — verify `outputs: ["coverage/**"]` matches actual coverage output path).
+
+**Dependencies added:** `jest`, `jest-expo`, `@testing-library/react-native`, `msw` or `axios-mock-adapter` (already implied by Phase 8).
+
+**Validation:** `pnpm test` from root runs every package's/app's suite via Turbo with correct `dependsOn` caching.
+
+**Tests:** This phase's deliverable *is* the test infrastructure — validated by all previously-written tests (Phases 4–9) now actually executing under one root command, plus the one Maestro flow running against a Development Build from Phase 11.
+
+**Known risks:** Maestro E2E requires a running simulator/emulator or device — same environment constraint as Phase 11.
+
+**Rollback:** N/A, additive.
+
+**Exit criteria:** `pnpm test` green from root; one working E2E flow proven on at least one platform.
+
+---
+
+## Phase 13 — CI/CD
+
+**Objective:** GitHub Actions for PR validation and main/production EAS builds, per §26.
+
+**Inputs:** All prior phases' `lint`/`typecheck`/`test` scripts; EAS project (not yet created — requires an Expo account/org, a user-side action).
+
+**Changes:**
+- `pr.yml`: install (`pnpm install --frozen-lockfile`) → format check → lint → typecheck → test → `expo-doctor` for each app.
+- `main.yml`: same gate, then triggers EAS builds on merge to `main`.
+- `release.yml`: on tag, EAS production build + submission.
+
+**Files created:**
+```
+.github/workflows/pr.yml
+.github/workflows/main.yml
+.github/workflows/release.yml
+```
+
+**Dependencies added:** none (uses `eas-cli` via `npx`/`pnpm dlx` in CI, no repo dependency needed).
+
+**Validation:** Workflow YAML lint (`actionlint` or GitHub's own validator); a draft PR against this repo to confirm `pr.yml` actually runs and passes.
+
+**Tests:** N/A (infrastructure, validated by execution).
+
+**Known risks:** Requires secrets (`EXPO_TOKEN`, EAS project ID) that only the user/org can provision — this phase produces the workflow files, but activating EAS build/submit requires the user to create the EAS project and add secrets in GitHub, which I cannot do on their behalf.
+
+**Rollback:** Workflows are additive; disabling is a one-line revert per file.
+
+**Exit criteria:** `pr.yml` green on a real PR; `main.yml`/`release.yml` structurally correct and documented as pending the user's EAS project/secrets setup.
+
+---
+
+## Phase 14 — Security Review
+
+**Objective:** Full audit per §23: token storage, logging, error reporting, env vars, secrets, deep links, debug logs, sensitive analytics, clipboard, screenshots.
+
+**Inputs:** Completed `auth`/`api`/`storage` packages (Phases 6–8), app config (Phase 10).
+
+**Changes:** No new features — this phase is an audit pass, output as a findings document plus any necessary fixes (e.g., stripping an accidental `console.log(accessToken)`, confirming `EXPO_PUBLIC_*` contains no secrets per §24).
+
+**Files created:** `docs/security-review-findings.md` (or fixed inline if code changes are needed — tracked in that same doc either way).
+
+**Validation:** Grep audit for `console.log` near token/password variable names; review of `app.config.ts`/`eas.json` for any secret committed as `EXPO_PUBLIC_*`; confirm production builds have `__DEV__`-gated logging only.
+
+**Tests:** N/A — audit, not a code-shipping phase (though findings may trigger small fixes validated by existing test suites).
+
+**Known risks:** A security review is only as good as its checklist; this phase's exit criteria is explicitly the §23 checklist, not an open-ended audit.
+
+**Rollback:** N/A.
+
+**Exit criteria:** Every item in §23's list explicitly checked off with a pass/fail/fixed status in the findings doc.
+
+---
+
+## Phase 15 — Performance Review
+
+**Objective:** Audit per §30 — rendering, re-renders, list virtualization, images, memory, network, query caching, startup time, bundle size, native modules, animations, JS/UI thread — measured, not guessed.
+
+**Inputs:** A working Development Build (Phase 11) to actually measure against.
+
+**Changes:** Findings-driven — e.g., swapping a `FlatList` for `FlashList` only if a measured list is actually large enough to justify it (§30: "do not prematurely optimize").
+
+**Files created:** `docs/performance-review-findings.md`.
+
+**Validation:** Expo's bundle size report (`expo export` output sizes, already observed in Phase 2: ~2MB web JS bundle as a baseline), React DevTools Profiler for re-render audits, cold-start timing on a Development Build.
+
+**Tests:** N/A — measurement-driven, any resulting optimization is validated by the existing test suite (Phase 12) plus before/after measurements in the findings doc.
+
+**Known risks:** Meaningful native performance measurement (startup time, JS/UI thread) needs Phase 11's on-device build; cannot be fully done from Metro web export alone.
+
+**Rollback:** N/A.
+
+**Exit criteria:** Every §30 category has a documented measurement and either a "no action needed" or a specific, justified change.
+
+---
+
+## Phase 16 — Final Architecture Audit
+
+**Objective:** Check every requirement in the original spec against what was actually built, per §35 Phase 16 and the §40 Final Checklist.
+
+**Inputs:** Everything from Phases 0–15.
+
+**Changes:** No code — output only.
+
+**Files created:** `docs/final-architecture-audit.md` — a table of `Requirement | Implemented? | File | Validation | Status` covering every line of the §40 checklist, plus the six required docs from §32 (`README.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`, `DEVELOPMENT.md`, `DEPLOYMENT.md`, `SECURITY.md`) and the eight ADRs from §33 (`ADR-001` through `ADR-008`), authored during this phase if not already produced incrementally alongside their respective phases.
+
+**Validation:** Every checklist row traces to a real file/command already validated in an earlier phase — this phase does not re-invent validation, it aggregates it.
+
+**Tests:** N/A.
+
+**Known risks:** If any earlier phase was skipped or partially done, this phase is where that becomes visible — by design.
+
+**Rollback:** N/A.
+
+**Exit criteria:** §40's full checklist has no unchecked, undocumented item; all 6 docs and 8 ADRs exist.
+
+---
+
+## Cross-Phase Notes
+
+- **Environment constraint:** this sandbox has no confirmed iOS/Android native toolchain. Phases 11, 12 (E2E), and parts of 15 require either a machine with Xcode/Android SDK or `eas build --profile development` runs, which need the user's Expo account/EAS project — flagged here rather than discovered late, per the master prompt's explicit instruction not to let this surface only at the end.
+- **EAS/GitHub secrets:** Phase 13's CI/CD and any real Phase 11 EAS builds need user-provisioned `EXPO_TOKEN` and an EAS project — a decision/action point for the user, not something implementable unilaterally.
+- **Sequencing is strict:** each phase above assumes the previous one's exit criteria were met, matching §34's "do not proceed until the current phase passes validation."
