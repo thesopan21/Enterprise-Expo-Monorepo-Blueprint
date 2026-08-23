@@ -16,6 +16,7 @@ Reference: package dependency graph and risk register from Phase 0 still apply a
 **Inputs:** Existing `packages/eslint-config`, `packages/typescript-config` (untouched since Phase 1); Expo SDK 57's own `expo/tsconfig.base`; each app's current standalone `tsconfig.json`.
 
 **Changes:**
+
 - Merge `eslint-config` + `typescript-config` into a single `packages/config` package (per spec §12, one package, not two).
 - Provide `tsconfig.base.json` (framework-agnostic strict TS) and `tsconfig.expo.json` (extends Expo's own base, for apps).
 - Provide a flat ESLint config (`eslint.config.mjs`) covering TS + React Native + import-order rules, split into a base ruleset and an Expo/React Native overlay.
@@ -24,6 +25,7 @@ Reference: package dependency graph and risk register from Phase 0 still apply a
 - Add root `tsconfig.json` project references to every package/app once each has its own `tsconfig.json`.
 
 **Files created:**
+
 ```
 packages/config/package.json
 packages/config/tsconfig.base.json
@@ -34,15 +36,17 @@ packages/config/prettier.config.js
 ```
 
 **Files modified:**
+
 ```
-apps/app-one/tsconfig.json, apps/app-two/tsconfig.json, apps/app-three/tsconfig.json
+apps/app-one/tsconfig.json
 tsconfig.json (root — add references)
 ```
+
 Files removed: `packages/eslint-config/**`, `packages/typescript-config/**` (superseded).
 
 **Dependencies added:** `typescript-eslint`, `eslint-plugin-react`, `eslint-plugin-react-hooks`, `eslint-config-expo` (Expo's official flat config base, if compatible with SDK 57), `prettier`.
 
-**Validation:** `pnpm lint` and `pnpm typecheck` from root succeed across all apps; each app's `tsc --noEmit` resolves the shared base without path errors; ESLint reports zero unexpected errors on the freshly generated app-one/two/three source.
+**Validation:** `pnpm lint` and `pnpm typecheck` from root succeed for app-one; `tsc --noEmit` resolves the shared base without path errors; ESLint reports zero unexpected errors on the freshly generated app-one source.
 
 **Tests:** N/A (config package — validated by consuming packages passing lint/typecheck, not unit tests).
 
@@ -63,6 +67,7 @@ Files removed: `packages/eslint-config/**`, `packages/typescript-config/**` (sup
 **Changes:** New package exporting a typed token object plus light/dark palettes. React Native `StyleSheet`-oriented (no NativeWind).
 
 **Files created:**
+
 ```
 packages/theme/package.json
 packages/theme/src/index.ts
@@ -99,6 +104,7 @@ packages/theme/src/elevation.ts
 **Changes:** New package; every component typed, accessible (`accessibilityRole`/`accessibilityLabel`/`accessibilityState`), with disabled/loading states where relevant, styled via `StyleSheet` and theme tokens only — no API or navigation imports.
 
 **Files created:**
+
 ```
 packages/ui/package.json
 packages/ui/src/index.ts
@@ -142,6 +148,7 @@ packages/ui/src/BottomSheet/BottomSheet.tsx   (only if a New-Architecture-compat
 **Changes:** Storage interface (`get`/`set`/`delete`/`clear`, typed) backed by `react-native-mmkv` in native builds; an in-memory fallback used only in Jest/unit-test environments and explicitly documented as non-persistent (never presented as a production substitute).
 
 **Files created:**
+
 ```
 packages/storage/package.json
 packages/storage/src/index.ts
@@ -174,6 +181,7 @@ packages/storage/README.md                    (documents fallback limitations ex
 **Changes:** Session manager exposing an interface (`getAccessToken`, `getRefreshToken`, `setSession`, `clearSession`, `onSessionChange`) designed so `@workspace/api` (Phase 8) consumes it by dependency inversion — no direct `auth → api` or `api → auth` circular import.
 
 **Files created:**
+
 ```
 packages/auth/package.json
 packages/auth/src/index.ts
@@ -204,12 +212,14 @@ packages/auth/src/types.ts
 **Inputs:** `@workspace/auth`'s `TokenProvider` interface (Phase 7) — consumed, not imported circularly.
 
 **Changes:**
+
 - Axios instance factory with interceptors for auth header injection and error normalization.
 - 401 handling: on first 401, trigger one refresh; concurrent requests that 401 while a refresh is in-flight queue and retry after it resolves, rather than each triggering their own refresh call.
 - On refresh failure: clear session via the injected `TokenProvider.clearSession()`, propagate a normalized `SESSION_EXPIRED` error for the app shell to react to (logout/redirect), per §20/§21.
 - Normalized `ApiError` type (`NETWORK`, `TIMEOUT`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `VALIDATION`, `RATE_LIMITED`, `SERVER`, `UNKNOWN`) so UI never touches raw Axios errors.
 
 **Files created:**
+
 ```
 packages/api/package.json
 packages/api/src/index.ts
@@ -241,10 +251,12 @@ packages/api/src/types.ts
 **Inputs:** None beyond `@workspace/config`.
 
 **Changes:**
+
 - `hooks`: `useNetworkStatus`, `useDebounce`, `useKeyboard`, `useAppState`, `useIsMounted`, `usePrevious`.
 - `utils`: date formatting, currency formatting, validation helpers, string helpers, number helpers, error helpers — framework-independent, minimal dependencies.
 
 **Files created:**
+
 ```
 packages/hooks/package.json
 packages/hooks/src/index.ts
@@ -285,7 +297,8 @@ packages/utils/src/error.ts (+ .test.ts)
 
 **Inputs:** All of Phases 3–9.
 
-**Changes (per app — app-one/two/three):**
+**Changes (app-one; structure repeats identically if/when additional apps are added later):**
+
 - `src/app/` — Expo Router route files, thin, delegate to `features/*/screens`.
 - `src/features/<feature>/{api,components,hooks,screens,types.ts,validation.ts}` — starting with an `auth` feature (login/logout screen using `@workspace/auth` + `@workspace/api`) as the reference implementation other features copy.
 - `src/providers/` — `QueryClientProvider` (TanStack Query), auth session provider, theme provider.
@@ -306,7 +319,7 @@ packages/utils/src/error.ts (+ .test.ts)
 
 **Rollback:** Per-feature — each feature folder is independent; a broken feature doesn't block the others since Expo Router routes are isolated files.
 
-**Exit criteria:** At least the `auth` feature fully wired end-to-end (mocked backend) in all three apps; route files contain no business logic; TanStack Query owns all server state.
+**Exit criteria:** At least the `auth` feature fully wired end-to-end (mocked backend) in app-one; route files contain no business logic; TanStack Query owns all server state.
 
 ---
 
@@ -319,6 +332,7 @@ packages/utils/src/error.ts (+ .test.ts)
 **Changes:** No new source files — this phase runs `expo prebuild` and produces Development Builds.
 
 **Commands:**
+
 ```
 pnpm --filter @workspace/app-one exec expo prebuild --clean
 pnpm --filter @workspace/app-one exec expo run:ios      (requires macOS + Xcode)
@@ -348,14 +362,16 @@ pnpm --filter @workspace/app-one exec expo run:android  (requires Android SDK)
 **Inputs:** Jest usage already implied by earlier phases' "Tests" sections.
 
 **Changes:**
+
 - Root Jest config (`jest.config.base.js` in `@workspace/config`, extended per package/app) using `jest-expo` preset for apps.
 - `test` script wired into every package/app `package.json`, orchestrated via `turbo run test`.
 - E2E strategy: **Maestro** recommended (YAML-based, no native test-target boilerplate, works well with Expo Development Builds and CI) over Detox (heavier native setup) — one flow (`login.yaml`) as the reference E2E test, not a full suite, per §28's "do not introduce five frameworks" guidance.
 
 **Files created:**
+
 ```
 packages/config/jest.config.base.js
-apps/app-one/.maestro/login.yaml   (reference flow; app-two/three follow once app-one's is proven)
+apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps if/when they're added)
 ```
 
 **Files modified:** every package/app `package.json` (`test` script), `turbo.json` (already has a `test` task from Phase 1 — verify `outputs: ["coverage/**"]` matches actual coverage output path).
@@ -364,7 +380,7 @@ apps/app-one/.maestro/login.yaml   (reference flow; app-two/three follow once ap
 
 **Validation:** `pnpm test` from root runs every package's/app's suite via Turbo with correct `dependsOn` caching.
 
-**Tests:** This phase's deliverable *is* the test infrastructure — validated by all previously-written tests (Phases 4–9) now actually executing under one root command, plus the one Maestro flow running against a Development Build from Phase 11.
+**Tests:** This phase's deliverable _is_ the test infrastructure — validated by all previously-written tests (Phases 4–9) now actually executing under one root command, plus the one Maestro flow running against a Development Build from Phase 11.
 
 **Known risks:** Maestro E2E requires a running simulator/emulator or device — same environment constraint as Phase 11.
 
@@ -381,11 +397,13 @@ apps/app-one/.maestro/login.yaml   (reference flow; app-two/three follow once ap
 **Inputs:** All prior phases' `lint`/`typecheck`/`test` scripts; EAS project (not yet created — requires an Expo account/org, a user-side action).
 
 **Changes:**
+
 - `pr.yml`: install (`pnpm install --frozen-lockfile`) → format check → lint → typecheck → test → `expo-doctor` for each app.
 - `main.yml`: same gate, then triggers EAS builds on merge to `main`.
 - `release.yml`: on tag, EAS production build + submission.
 
 **Files created:**
+
 ```
 .github/workflows/pr.yml
 .github/workflows/main.yml

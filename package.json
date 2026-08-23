@@ -12,6 +12,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
   "devDependencies": {
+    "@workspace/config": "workspace:*",
     "prettier": "^3.7.4",
     "turbo": "^2.10.11",
     "typescript": "~6.0.3"
