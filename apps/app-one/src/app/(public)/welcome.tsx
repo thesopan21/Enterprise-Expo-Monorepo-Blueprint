@@ -17,7 +17,7 @@ export default function WelcomeScreen() {
       }}
     >
       <Typography variant="h1">app-one</Typography>
-      <Button label="Sign in" onPress={() => router.push('/auth/sign-in')} />
+      <Button testID="welcome-sign-in" label="Sign in" onPress={() => router.push('/auth/sign-in')} />
     </View>
   );
 }

@@ -1,8 +1,1 @@
-/** @type {import('jest').Config} */
-module.exports = {
-  testEnvironment: 'node',
-  testMatch: ['**/*.test.ts'],
-  transform: {
-    '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.jest.json' }],
-  },
-};
+module.exports = require('@workspace/config/jest.config.base.cjs');

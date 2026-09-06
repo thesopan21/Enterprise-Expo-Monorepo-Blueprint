@@ -51,6 +51,15 @@ export const baseConfig = [
   {
     ignores: ["dist/**", "node_modules/**", ".expo/**", ".turbo/**"],
   },
+  {
+    // Jest/babel config files are genuinely CommonJS (some forced to
+    // .cjs specifically to sidestep this package's own "type": "module"),
+    // so requiring them by path is correct, not a style violation.
+    files: ["jest.config.*", "babel.config.*"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ];
 
 export default baseConfig;

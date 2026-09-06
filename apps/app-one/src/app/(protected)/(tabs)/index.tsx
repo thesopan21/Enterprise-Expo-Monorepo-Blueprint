@@ -10,7 +10,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Typography variant="body">Home screen.</Typography>
-      <Button label="Sign out" onPress={() => signOut()} />
+      <Button testID="home-sign-out" label="Sign out" onPress={() => signOut()} />
     </View>
   );
 }

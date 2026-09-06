@@ -1,0 +1,38 @@
+appId: com.anonymous.appone
+---
+# Reference E2E flow — exercises the same login -> protected route ->
+# logout loop Phase 10's integration test covers at the unit level, but
+# here end-to-end on a real device/simulator. Not a full suite: per the
+# plan's "do not introduce five frameworks" guidance, this is the one
+# flow that proves the setup works, not exhaustive coverage.
+#
+# Known environment issue: on an Android 17 (API 37) emulator, Maestro
+# 2.10.0's `inputText` step hangs indefinitely (launch/tap/assert all
+# work fine via testID — only text entry is affected). Likely the
+# driver hasn't caught up to this very new API level yet. Validate this
+# flow on a stable Android API level (34/35) or a real device/iOS
+# simulator before relying on it in CI.
+- launchApp
+# The dev client fetches its JS bundle from Metro on cold launch (splash
+# screen first) — a plain assertVisible fires before that finishes, so
+# give it a generous, explicit timeout here only.
+- extendedWaitUntil:
+    visible: "app-one"
+    timeout: 45000
+- tapOn:
+    id: "welcome-sign-in"
+- assertVisible: "Welcome back"
+
+- tapOn:
+    id: "sign-in-email"
+- inputText: "demo@example.com"
+- tapOn:
+    id: "sign-in-password"
+- inputText: "password123"
+- tapOn:
+    id: "sign-in-submit"
+
+- assertVisible: "Home screen."
+- tapOn:
+    id: "home-sign-out"
+- assertVisible: "app-one"

@@ -25,6 +25,7 @@ export function SignInScreen() {
     <View style={{ padding: theme.spacing[4], gap: theme.spacing[4] }}>
       <Typography variant="h2">Welcome back</Typography>
       <Input
+        testID="sign-in-email"
         label="Email"
         value={values.email}
         onChangeText={(email) => setValues((current) => ({ ...current, email }))}
@@ -33,6 +34,7 @@ export function SignInScreen() {
         keyboardType="email-address"
       />
       <Input
+        testID="sign-in-password"
         label="Password"
         value={values.password}
         onChangeText={(password) => setValues((current) => ({ ...current, password }))}
@@ -44,7 +46,7 @@ export function SignInScreen() {
           {signIn.error instanceof Error ? signIn.error.message : 'Something went wrong.'}
         </Typography>
       ) : null}
-      <Button label="Sign in" onPress={handleSubmit} loading={signIn.isPending} />
+      <Button testID="sign-in-submit" label="Sign in" onPress={handleSubmit} loading={signIn.isPending} />
     </View>
   );
 }
