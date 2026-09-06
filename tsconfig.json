@@ -6,6 +6,8 @@
     { "path": "packages/ui" },
     { "path": "packages/storage" },
     { "path": "packages/auth" },
-    { "path": "packages/api" }
+    { "path": "packages/api" },
+    { "path": "packages/hooks" },
+    { "path": "packages/utils" }
   ]
 }
