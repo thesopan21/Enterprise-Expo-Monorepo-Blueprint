@@ -2,23 +2,26 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
-import {
-  AuthProvider,
-  useAuth
-} from '@/context/AuthContext';
+import { QueryProvider } from '@/providers/QueryProvider';
+import { SessionProvider, useSession } from '@/providers/SessionProvider';
+import { ThemeProvider } from '@/providers/ThemeProvider';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <NavigationRouter />
-    </AuthProvider>
+    <ThemeProvider>
+      <QueryProvider>
+        <SessionProvider>
+          <NavigationRouter />
+        </SessionProvider>
+      </QueryProvider>
+    </ThemeProvider>
   );
 }
 
 function NavigationRouter() {
-  const { session, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useSession();
 
   useEffect(() => {
     if (!isLoading) {
@@ -31,20 +34,14 @@ function NavigationRouter() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       {/* Protect the entire public group tree */}
-      <Stack.Protected guard={!session}>
+      <Stack.Protected guard={!isAuthenticated}>
         <Stack.Screen name="(public)" />
       </Stack.Protected>
 
       {/* Protect the entire authenticated group tree */}
-      <Stack.Protected guard={!!session}>
+      <Stack.Protected guard={isAuthenticated}>
         <Stack.Screen name="(protected)" />
       </Stack.Protected>
-
-      {/* Global Modals layout overlay */}
-      <Stack.Screen
-        name="modal/help-center"
-        options={{ presentation: 'modal', headerShown: true, title: 'Help Center' }}
-      />
     </Stack>
   );
 }

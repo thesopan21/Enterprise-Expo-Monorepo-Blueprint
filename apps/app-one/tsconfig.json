@@ -1,6 +1,7 @@
 {
   "extends": "@workspace/config/tsconfig.expo.json",
   "compilerOptions": {
+    "types": ["jest"],
     "paths": {
       "@/*": ["./src/*"],
       "@/assets/*": ["./assets/*"]

@@ -1,9 +1,16 @@
-import { Text, View, StyleSheet } from "react-native";
+import { theme } from '@workspace/theme';
+import { Button, Typography } from '@workspace/ui';
+import { StyleSheet, View } from 'react-native';
 
-export default function Index() {
+import { useSession } from '@/providers/SessionProvider';
+
+export default function HomeScreen() {
+  const { signOut } = useSession();
+
   return (
     <View style={styles.container}>
-      <Text>Home screen.</Text>
+      <Typography variant="body">Home screen.</Typography>
+      <Button label="Sign out" onPress={() => signOut()} />
     </View>
   );
 }
@@ -11,7 +18,8 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing[4],
   },
 });

@@ -1,7 +1,7 @@
-# Phased Implementation Plan — Phases 3–16
+# Phased Implementation Plan — Phases 3–17
 
 Status: **Planning document only — no implementation in this document.**
-Date: 2026-08-23
+Date: 2026-08-23 (Phase 11 — `@workspace/store` — inserted 2026-09-06; see Cross-Phase Notes for the resulting numbering offset against `01_plan_prompt.md`)
 
 This is the required per-phase breakdown (§34 of `01_plan_prompt.md`): every phase carries Objective, Inputs, Changes, Files created, Files modified, Dependencies, Validation, Tests, Known risks, Rollback strategy, and Exit criteria. Phases 0–2 are already implemented and validated — see `00_phase0_discovery.md` and the chat report for their results. Nothing below has been built yet; each phase starts only once the prior one is reviewed and approved.
 
@@ -85,7 +85,7 @@ packages/theme/src/elevation.ts
 
 **Validation:** `pnpm --filter @workspace/theme typecheck`; import `{ theme }` from a throwaway snippet in one app to confirm resolution (`import { colors } from '@workspace/theme'`), then remove the snippet.
 
-**Tests:** Unit tests asserting token shape (e.g., every color has a value, spacing scale is monotonic) — lightweight, via the test runner chosen in Phase 12 groundwork (Jest config introduced here just for this package, formalized repo-wide in Phase 12).
+**Tests:** Unit tests asserting token shape (e.g., every color has a value, spacing scale is monotonic) — lightweight, via the test runner chosen in Phase 13 groundwork (Jest config introduced here just for this package, formalized repo-wide in Phase 13).
 
 **Known risks:** Low — no native/runtime dependencies.
 
@@ -129,9 +129,9 @@ packages/ui/src/BottomSheet/BottomSheet.tsx   (only if a New-Architecture-compat
 
 **Validation:** `pnpm --filter @workspace/ui typecheck`; render each component in one app's screen temporarily via `expo start --web` to visually confirm no crashes; remove the temporary screen after.
 
-**Tests:** Component tests (React Native Testing Library) for interactive components (`Button` press states, `Input` value/onChange, `Modal` open/close) — introduced here, formalized in Phase 12.
+**Tests:** Component tests (React Native Testing Library) for interactive components (`Button` press states, `Input` value/onChange, `Modal` open/close) — introduced here, formalized in Phase 13.
 
-**Known risks:** `BottomSheet` dependency requires a Development Build even in `Expo Go`-friendly early testing — flag clearly in package README so app teams aren't surprised later (Phase 11 native validation is where this actually gets exercised).
+**Known risks:** `BottomSheet` dependency requires a Development Build even in `Expo Go`-friendly early testing — flag clearly in package README so app teams aren't surprised later (Phase 12 native validation is where this actually gets exercised).
 
 **Rollback:** Ship without `BottomSheet` first (defer to a later minor addition) if the dependency check fails; the rest of the component set has no such constraint.
 
@@ -160,15 +160,15 @@ packages/storage/README.md                    (documents fallback limitations ex
 
 **Dependencies added:** `react-native-mmkv` (v4.x) + peer `react-native-nitro-modules`.
 
-**Validation:** `pnpm --filter @workspace/storage typecheck`; a Development Build smoke test in Phase 11 (native validation) is the real proof — this phase alone cannot validate native MMKV behavior in Expo Go.
+**Validation:** `pnpm --filter @workspace/storage typecheck`; a Development Build smoke test in Phase 12 (native validation) is the real proof — this phase alone cannot validate native MMKV behavior in Expo Go.
 
-**Tests:** Unit tests against the memory fallback (interface contract only); native MMKV behavior is exercised in Phase 11, not here, since it requires a Development Build.
+**Tests:** Unit tests against the memory fallback (interface contract only); native MMKV behavior is exercised in Phase 12, not here, since it requires a Development Build.
 
 **Known risks:** Team continuing to use `expo start` (Expo Go) without a Development Build will silently hit "module not found" for MMKV — mitigated by failing loudly with a clear error message from the storage package rather than a cryptic native crash, plus README callout.
 
-**Rollback:** Fall back to `@react-native-async-storage/async-storage` if MMKV/NitroModules prove incompatible with SDK 57 during Phase 11 — documented as a contingency, not the default plan.
+**Rollback:** Fall back to `@react-native-async-storage/async-storage` if MMKV/NitroModules prove incompatible with SDK 57 during Phase 12 — documented as a contingency, not the default plan.
 
-**Exit criteria:** Interface typed and exported as `@workspace/storage`; fallback behavior unit-tested; native behavior deferred to and tracked in Phase 11.
+**Exit criteria:** Interface typed and exported as `@workspace/storage`; fallback behavior unit-tested; native behavior deferred to and tracked in Phase 12.
 
 ---
 
@@ -193,7 +193,7 @@ packages/auth/src/types.ts
 
 **Dependencies added:** `expo-secure-store` (already ships with SDK 57 apps, added explicitly here as a package-level dependency); a lightweight JWT decode library (no server-side verification logic in-app).
 
-**Validation:** `pnpm --filter @workspace/auth typecheck`; SecureStore behavior validated on a real Development Build in Phase 11 (SecureStore has no meaningful web/simulator-only substitute for production behavior — document this limitation explicitly, do not fake it).
+**Validation:** `pnpm --filter @workspace/auth typecheck`; SecureStore behavior validated on a real Development Build in Phase 12 (SecureStore has no meaningful web/simulator-only substitute for production behavior — document this limitation explicitly, do not fake it).
 
 **Tests:** Unit tests for JWT decode edge cases (malformed token, expired `exp` claim) and session state transitions, using a mocked SecureStore adapter.
 
@@ -293,7 +293,14 @@ packages/utils/src/error.ts (+ .test.ts)
 
 ## Phase 10 — Application Architecture
 
-**Objective:** Wire the shared packages into each app via feature-oriented structure, Expo Router for navigation only (no business logic in route files), providers, services, and TanStack Query for server state.
+**Objective:** Wire the shared packages into each app via feature-oriented structure, Expo Router for navigation only (no business logic in route files), providers, services, and a server-state layer.
+
+**Server-state strategy (developer choice):** This blueprint supports two interchangeable patterns, both consuming `@workspace/api`'s `createApiClient()` as the transport — neither changes anything in `@workspace/api` itself:
+
+- **Pattern A — TanStack Query** (default for app-one): `QueryClientProvider` + manual `useQuery`/`useMutation` hooks per feature calling the shared axios client directly. No global client-state store.
+- **Pattern B — Redux Toolkit + RTK Query**: a root store + `createApi()` using a custom `axiosBaseQuery` that wraps the same axios client. Pulls in Redux Toolkit + react-redux as hard dependencies. Built as a ready-to-use package in Phase 11.
+
+A team scaffolding a new app from this blueprint picks one; a single app only ever runs one pattern at runtime. Nothing in Phases 0–9 depends on this choice.
 
 **Inputs:** All of Phases 3–9.
 
@@ -301,15 +308,15 @@ packages/utils/src/error.ts (+ .test.ts)
 
 - `src/app/` — Expo Router route files, thin, delegate to `features/*/screens`.
 - `src/features/<feature>/{api,components,hooks,screens,types.ts,validation.ts}` — starting with an `auth` feature (login/logout screen using `@workspace/auth` + `@workspace/api`) as the reference implementation other features copy.
-- `src/providers/` — `QueryClientProvider` (TanStack Query), auth session provider, theme provider.
+- `src/providers/` — server-state provider (`QueryClientProvider` for Pattern A, or `<Provider store={...}>` for Pattern B), auth session provider, theme provider.
 - `src/services/` — app-level service wiring (e.g., the concrete Axios client instance configured with this app's base URL, injected into `@workspace/api`'s factory).
 - `src/config/`, `src/constants/` — per-app environment-driven config (ties into Phase 24's environment strategy, not duplicated here).
 
 **Files created:** New `src/` tree per app (structure above); each app's root layout (`src/app/_layout.tsx`) wraps providers.
 
-**Files modified:** Each app's `package.json` (add `@workspace/*` and `@tanstack/react-query` dependencies), existing template route files replaced by the feature-oriented structure.
+**Files modified:** Each app's `package.json` (add `@workspace/*` and the chosen server-state pattern's dependencies), existing template route files replaced by the feature-oriented structure.
 
-**Dependencies added:** `@tanstack/react-query` (per app, or hoisted at workspace root if version-pinned identically across apps).
+**Dependencies added:** Pattern A: `@tanstack/react-query` (per app, or hoisted at workspace root if version-pinned identically across apps). Pattern B: `@workspace/store` (Phase 11), which itself carries `@reduxjs/toolkit` + `react-redux`.
 
 **Validation:** `expo export --platform web` per app succeeds against the new structure (as already proven possible in Phase 2); manual login-flow walkthrough once a real or mock API endpoint is available.
 
@@ -319,11 +326,53 @@ packages/utils/src/error.ts (+ .test.ts)
 
 **Rollback:** Per-feature — each feature folder is independent; a broken feature doesn't block the others since Expo Router routes are isolated files.
 
-**Exit criteria:** At least the `auth` feature fully wired end-to-end (mocked backend) in app-one; route files contain no business logic; TanStack Query owns all server state.
+**Exit criteria:** At least the `auth` feature fully wired end-to-end (mocked backend) in app-one; route files contain no business logic; the chosen server-state pattern owns all server state.
 
 ---
 
-## Phase 11 — Native / CNG Validation
+## Phase 11 — `@workspace/store` (Redux Toolkit + RTK Query)
+
+**Objective:** A production-grade Redux Toolkit + RTK Query package — Pattern B of Phase 10's server-state choice — built now as a ready-to-use package for any future app that prefers Redux over TanStack Query, not wired into app-one by default.
+
+**Inputs:** `@workspace/api`'s `createApiClient()` (Phase 8) as the transport that RTK Query's `axiosBaseQuery` wraps — this package never creates its own HTTP client. `@workspace/auth`'s `TokenProvider` (Phase 7) is consumed indirectly, only through whichever `@workspace/api` client instance an app injects; `@workspace/store` itself has no auth/token-handling logic of its own.
+
+**Changes:**
+
+- `configureStore` factory producing a typed `RootState`/`AppDispatch`, plus typed `useAppDispatch`/`useAppSelector` hooks (per Redux Toolkit's own recommended pattern — no untyped `useDispatch`/`useSelector` usage anywhere downstream).
+- A custom `axiosBaseQuery` adapter so `createApi()` endpoints route through an app-supplied `AxiosInstance` (i.e. the same instance `@workspace/api`'s `createApiClient()` produces) instead of RTK Query's default `fetchBaseQuery` — preserving Phase 8's auth-header injection, single-flight refresh, and `ApiError` normalization untouched.
+- One reference `createApi()` slice with a placeholder query, a placeholder mutation, and tag-based cache invalidation between them — a template for consuming apps to copy and replace with real endpoints, not a real feature.
+- Redux DevTools enabled in development builds only (`__DEV__`-gated), disabled in production.
+- A documented, optional integration point for `redux-persist` (not force-enabled) for apps that want Redux-level cache persistence beyond what `@workspace/storage`/`@workspace/auth` already provide.
+
+**Files created:**
+
+```
+packages/store/package.json
+packages/store/src/index.ts
+packages/store/src/store.ts                  (configureStore, RootState, AppDispatch)
+packages/store/src/hooks.ts                  (typed useAppDispatch/useAppSelector)
+packages/store/src/axiosBaseQuery.ts         (RTK Query <-> @workspace/api adapter)
+packages/store/src/api/exampleApi.ts         (reference createApi() slice — query + mutation + tag invalidation)
+packages/store/README.md                     (wiring into an app's root Provider; replacing the example slice; how this coexists with/replaces Phase 10's TanStack Query default)
+```
+
+**Files modified:** none outside `packages/store` — app-one stays on Pattern A (TanStack Query) and does not import this package.
+
+**Dependencies added:** `@reduxjs/toolkit`, `react-redux`.
+
+**Validation:** `pnpm --filter @workspace/store typecheck`; a throwaway `<Provider store={store}>` + one `useExampleQuery()` call wired into one app (mirroring how Phases 4–9 validated bundler resolution), confirming the axios adapter round-trips through `@workspace/api`'s interceptors (auth header present, a forced 401 triggers the same single-flight refresh as Phase 8's own tests), then remove the snippet.
+
+**Tests:** Unit tests for `axiosBaseQuery` — a successful Axios response maps to RTK Query's `{ data }` shape; an `ApiError` (Phase 8) maps to `{ error }` with its `code`/`status` preserved, not a raw Axios error. A store-level test proving the example slice's tag invalidation actually triggers a refetch after its mutation succeeds (the same class of correctness bar Phase 8 set for its own cache/retry logic).
+
+**Known risks:** This package is not consumed by app-one, so its own unit tests and the throwaway wiring check in Validation are the only proof it works until a real app adopts Pattern B — keep the example slice deliberately trivial so it doesn't rot into an unmaintained fake feature. Redux Toolkit + react-redux add real bundle weight (relevant to Phase 16's performance review); a team must consciously add this package, never receive it as a transitive default.
+
+**Rollback:** Delete `packages/store`; Phase 10's app-one wiring has zero dependency on it (TanStack Query is fully self-contained), so rollback is isolated and risk-free to the rest of the graph.
+
+**Exit criteria:** `axiosBaseQuery` unit-tested against both success and `ApiError` cases; the example slice's tag-invalidation test passes; package typechecks/lints clean; README documents how a future app switches from Pattern A to Pattern B using this package.
+
+---
+
+## Phase 12 — Native / CNG Validation
 
 **Objective:** Prove the whole dependency graph (MMKV/NitroModules, SecureStore, any UI native deps like BottomSheet) actually builds and runs as native code, not just typechecks.
 
@@ -345,7 +394,7 @@ pnpm --filter @workspace/app-one exec expo run:android  (requires Android SDK)
 
 **Validation:** App launches on iOS Simulator and Android Emulator; MMKV read/write round-trips; SecureStore persists across app restarts; login flow (Phase 10) works on-device, not just in Metro web export.
 
-**Tests:** Manual smoke test checklist (documented, not automated) — automated E2E is Phase 12's responsibility, not this one.
+**Tests:** Manual smoke test checklist (documented, not automated) — automated E2E is Phase 13's responsibility, not this one.
 
 **Known risks:** This is the phase most likely to surface real incompatibilities (NitroModules build errors, config-plugin conflicts) that couldn't be caught by typecheck/lint alone — **this environment cannot execute `expo run:ios`/`run:android` directly** (no macOS/Xcode or Android SDK confirmed available here), so this phase's native execution must happen on a machine with those toolchains, or via `eas build --profile development`.
 
@@ -355,9 +404,9 @@ pnpm --filter @workspace/app-one exec expo run:android  (requires Android SDK)
 
 ---
 
-## Phase 12 — Testing
+## Phase 13 — Testing
 
-**Objective:** Formalize the unit/component tests already written ad hoc in Phases 4–9 into one coherent, repo-wide test setup, plus define the E2E strategy.
+**Objective:** Formalize the unit/component tests already written ad hoc in Phases 4–11 into one coherent, repo-wide test setup, plus define the E2E strategy.
 
 **Inputs:** Jest usage already implied by earlier phases' "Tests" sections.
 
@@ -380,9 +429,9 @@ apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps i
 
 **Validation:** `pnpm test` from root runs every package's/app's suite via Turbo with correct `dependsOn` caching.
 
-**Tests:** This phase's deliverable _is_ the test infrastructure — validated by all previously-written tests (Phases 4–9) now actually executing under one root command, plus the one Maestro flow running against a Development Build from Phase 11.
+**Tests:** This phase's deliverable _is_ the test infrastructure — validated by all previously-written tests (Phases 4–11) now actually executing under one root command, plus the one Maestro flow running against a Development Build from Phase 12.
 
-**Known risks:** Maestro E2E requires a running simulator/emulator or device — same environment constraint as Phase 11.
+**Known risks:** Maestro E2E requires a running simulator/emulator or device — same environment constraint as Phase 12.
 
 **Rollback:** N/A, additive.
 
@@ -390,7 +439,7 @@ apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps i
 
 ---
 
-## Phase 13 — CI/CD
+## Phase 14 — CI/CD
 
 **Objective:** GitHub Actions for PR validation and main/production EAS builds, per §26.
 
@@ -424,7 +473,7 @@ apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps i
 
 ---
 
-## Phase 14 — Security Review
+## Phase 15 — Security Review
 
 **Objective:** Full audit per §23: token storage, logging, error reporting, env vars, secrets, deep links, debug logs, sensitive analytics, clipboard, screenshots.
 
@@ -446,11 +495,11 @@ apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps i
 
 ---
 
-## Phase 15 — Performance Review
+## Phase 16 — Performance Review
 
 **Objective:** Audit per §30 — rendering, re-renders, list virtualization, images, memory, network, query caching, startup time, bundle size, native modules, animations, JS/UI thread — measured, not guessed.
 
-**Inputs:** A working Development Build (Phase 11) to actually measure against.
+**Inputs:** A working Development Build (Phase 12) to actually measure against.
 
 **Changes:** Findings-driven — e.g., swapping a `FlatList` for `FlashList` only if a measured list is actually large enough to justify it (§30: "do not prematurely optimize").
 
@@ -458,9 +507,9 @@ apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps i
 
 **Validation:** Expo's bundle size report (`expo export` output sizes, already observed in Phase 2: ~2MB web JS bundle as a baseline), React DevTools Profiler for re-render audits, cold-start timing on a Development Build.
 
-**Tests:** N/A — measurement-driven, any resulting optimization is validated by the existing test suite (Phase 12) plus before/after measurements in the findings doc.
+**Tests:** N/A — measurement-driven, any resulting optimization is validated by the existing test suite (Phase 13) plus before/after measurements in the findings doc.
 
-**Known risks:** Meaningful native performance measurement (startup time, JS/UI thread) needs Phase 11's on-device build; cannot be fully done from Metro web export alone.
+**Known risks:** Meaningful native performance measurement (startup time, JS/UI thread) needs Phase 12's on-device build; cannot be fully done from Metro web export alone. If Phase 11's `@workspace/store` is ever adopted by an app, its Redux Toolkit/react-redux bundle-size cost should be measured here rather than assumed negligible.
 
 **Rollback:** N/A.
 
@@ -468,11 +517,11 @@ apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps i
 
 ---
 
-## Phase 16 — Final Architecture Audit
+## Phase 17 — Final Architecture Audit
 
 **Objective:** Check every requirement in the original spec against what was actually built, per §35 Phase 16 and the §40 Final Checklist.
 
-**Inputs:** Everything from Phases 0–15.
+**Inputs:** Everything from Phases 0–16.
 
 **Changes:** No code — output only.
 
@@ -492,6 +541,7 @@ apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps i
 
 ## Cross-Phase Notes
 
-- **Environment constraint:** this sandbox has no confirmed iOS/Android native toolchain. Phases 11, 12 (E2E), and parts of 15 require either a machine with Xcode/Android SDK or `eas build --profile development` runs, which need the user's Expo account/EAS project — flagged here rather than discovered late, per the master prompt's explicit instruction not to let this surface only at the end.
-- **EAS/GitHub secrets:** Phase 13's CI/CD and any real Phase 11 EAS builds need user-provisioned `EXPO_TOKEN` and an EAS project — a decision/action point for the user, not something implementable unilaterally.
+- **Numbering offset against `01_plan_prompt.md`:** Phase 11 (`@workspace/store`) was inserted on 2026-09-06 and is not present in the original master spec (`01_plan_prompt.md`), which goes directly from its own Phase 10 to its own Phase 11 ("Native/CNG"). From this document's Phase 12 onward, our phase numbers are the master spec's phase number **+1** (our Phase 12 = spec's Phase 11, ... our Phase 17 = spec's Phase 16). Citations like "§35 Phase 16" inside Phase 17 refer to the master spec's own numbering, not this document's heading numbers.
+- **Environment constraint:** this sandbox has no confirmed iOS/Android native toolchain. Phases 12, 13 (E2E), and parts of 16 require either a machine with Xcode/Android SDK or `eas build --profile development` runs, which need the user's Expo account/EAS project — flagged here rather than discovered late, per the master prompt's explicit instruction not to let this surface only at the end.
+- **EAS/GitHub secrets:** Phase 14's CI/CD and any real Phase 12 EAS builds need user-provisioned `EXPO_TOKEN` and an EAS project — a decision/action point for the user, not something implementable unilaterally.
 - **Sequencing is strict:** each phase above assumes the previous one's exit criteria were met, matching §34's "do not proceed until the current phase passes validation."
