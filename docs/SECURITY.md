@@ -2,7 +2,7 @@
 
 This document summarizes the security posture established across this
 build. For the full item-by-item audit, see
-[`docs/security-review-findings.md`](./docs/security-review-findings.md)
+[`security-review-findings.md`](./security-review-findings.md)
 (Phase 19, checked against `01_plan_prompt.md` §23).
 
 ## Token storage

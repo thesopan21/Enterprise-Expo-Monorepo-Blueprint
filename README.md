@@ -5,8 +5,8 @@ shared design tokens, UI components, storage, auth, API client, and
 optional analytics/notifications/i18n packages, seeded once and reused
 across every future app added to this repo.
 
-> **Start here:** [`ARCHITECTURE.md`](./ARCHITECTURE.md) for how the pieces
-> fit together, [`DEVELOPMENT.md`](./DEVELOPMENT.md) to get running locally,
+> **Start here:** [`ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for how the pieces
+> fit together, [`DEVELOPMENT.md`](./docs/DEVELOPMENT.md) to get running locally,
 > [`docs/02_phased_implementation_plan.md`](./docs/02_phased_implementation_plan.md)
 > for the full build history, and
 > [`docs/final-architecture-audit.md`](./docs/final-architecture-audit.md)
@@ -32,6 +32,9 @@ packages/
 docs/
   01_plan_prompt.md                    Master specification this blueprint was built against
   02_phased_implementation_plan.md     Per-phase build log (Objective/Changes/Validation/... per phase)
+  ARCHITECTURE.md CONTRIBUTING.md      Package graph/dependency rules; contribution guide
+  DEVELOPMENT.md DEPLOYMENT.md         Local setup/troubleshooting; EAS builds/CI/CD/release process
+  SECURITY.md                          Token storage, what never to log, reporting a vulnerability
   adr/                                 Architecture Decision Records (ADR-001 .. ADR-008)
   *-review-findings.md                 Security/performance audit findings
   final-architecture-audit.md          §40 checklist traced to real evidence
@@ -39,7 +42,7 @@ docs/
 
 ## Package responsibilities and dependency rules
 
-See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full graph and the rule
+See [`ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for the full graph and the rule
 each package follows (one responsibility, native modules as peer
 dependencies, one-way dependency direction). The short version:
 `ui` depends on `theme`; `api` depends on `auth`'s types; nothing depends on
@@ -54,9 +57,9 @@ pnpm install
 pnpm --filter app-one start
 ```
 
-See [`DEVELOPMENT.md`](./DEVELOPMENT.md) for the full setup (native
+See [`DEVELOPMENT.md`](./docs/DEVELOPMENT.md) for the full setup (native
 toolchain requirements, environment variables, common Metro/pnpm/native
-issues) and [`DEPLOYMENT.md`](./DEPLOYMENT.md) for EAS builds, OTA updates,
+issues) and [`DEPLOYMENT.md`](./docs/DEPLOYMENT.md) for EAS builds, OTA updates,
 and CI/CD.
 
 ## Common commands
@@ -72,11 +75,11 @@ and CI/CD.
 
 | Doc                                                                            | Covers                                                             |
 | ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| [`ARCHITECTURE.md`](./ARCHITECTURE.md)                                         | Package graph, dependency rules, key architectural decisions       |
-| [`CONTRIBUTING.md`](./CONTRIBUTING.md)                                         | Adding a package/app, PR expectations, commit style                |
-| [`DEVELOPMENT.md`](./DEVELOPMENT.md)                                           | Local setup, native builds, environment variables, troubleshooting |
-| [`DEPLOYMENT.md`](./DEPLOYMENT.md)                                             | EAS builds, OTA updates, CI/CD, release process                    |
-| [`SECURITY.md`](./SECURITY.md)                                                 | Token storage, what never to log, reporting a vulnerability        |
+| [`ARCHITECTURE.md`](./docs/ARCHITECTURE.md)                                    | Package graph, dependency rules, key architectural decisions       |
+| [`CONTRIBUTING.md`](./docs/CONTRIBUTING.md)                                    | Adding a package/app, PR expectations, commit style                |
+| [`DEVELOPMENT.md`](./docs/DEVELOPMENT.md)                                      | Local setup, native builds, environment variables, troubleshooting |
+| [`DEPLOYMENT.md`](./docs/DEPLOYMENT.md)                                        | EAS builds, OTA updates, CI/CD, release process                    |
+| [`SECURITY.md`](./docs/SECURITY.md)                                            | Token storage, what never to log, reporting a vulnerability        |
 | [`docs/adr/`](./docs/adr/)                                                     | ADR-001 through ADR-008, one per major architectural choice        |
 | [`docs/security-review-findings.md`](./docs/security-review-findings.md)       | Phase 19's §23 audit                                               |
 | [`docs/performance-review-findings.md`](./docs/performance-review-findings.md) | Phase 20's §30 audit                                               |

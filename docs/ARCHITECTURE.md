@@ -88,14 +88,14 @@ local native builds are described in `DEPLOYMENT.md`.
 
 ## Key architectural decisions
 
-See [`docs/adr/`](./docs/adr/) for the full Context/Decision/Alternatives/
+See [`adr/`](./adr/) for the full Context/Decision/Alternatives/
 Consequences behind each of the following:
 
-- [ADR-001](./docs/adr/ADR-001-pnpm-turborepo.md) — pnpm + Turborepo
-- [ADR-002](./docs/adr/ADR-002-expo-cng.md) — Expo CNG
-- [ADR-003](./docs/adr/ADR-003-package-boundaries.md) — Package boundaries
-- [ADR-004](./docs/adr/ADR-004-axios-tanstack-query.md) — Axios + TanStack Query
-- [ADR-005](./docs/adr/ADR-005-securestore-mmkv.md) — SecureStore + MMKV
-- [ADR-006](./docs/adr/ADR-006-stylesheet-design-system.md) — StyleSheet design system
-- [ADR-007](./docs/adr/ADR-007-auth-token-refresh.md) — Authentication/token refresh
-- [ADR-008](./docs/adr/ADR-008-cicd-architecture.md) — CI/CD architecture
+- [ADR-001](./adr/ADR-001-pnpm-turborepo.md) — pnpm + Turborepo
+- [ADR-002](./adr/ADR-002-expo-cng.md) — Expo CNG
+- [ADR-003](./adr/ADR-003-package-boundaries.md) — Package boundaries
+- [ADR-004](./adr/ADR-004-axios-tanstack-query.md) — Axios + TanStack Query
+- [ADR-005](./adr/ADR-005-securestore-mmkv.md) — SecureStore + MMKV
+- [ADR-006](./adr/ADR-006-stylesheet-design-system.md) — StyleSheet design system
+- [ADR-007](./adr/ADR-007-auth-token-refresh.md) — Authentication/token refresh
+- [ADR-008](./adr/ADR-008-cicd-architecture.md) — CI/CD architecture
