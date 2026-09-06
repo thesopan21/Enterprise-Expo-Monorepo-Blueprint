@@ -1,16 +1,16 @@
-export * from './colors.js';
-export * from './elevation.js';
-export * from './radius.js';
-export * from './shadows.js';
-export * from './spacing.js';
-export * from './typography.js';
+export * from './colors';
+export * from './elevation';
+export * from './radius';
+export * from './shadows';
+export * from './spacing';
+export * from './typography';
 
-import { colors } from './colors.js';
-import { zIndex } from './elevation.js';
-import { radius } from './radius.js';
-import { shadows } from './shadows.js';
-import { breakpoints, spacing } from './spacing.js';
-import { fontFamily, fontSize, fontWeight, lineHeight } from './typography.js';
+import { colors } from './colors';
+import { zIndex } from './elevation';
+import { radius } from './radius';
+import { shadows } from './shadows';
+import { breakpoints, spacing } from './spacing';
+import { fontFamily, fontSize, fontWeight, lineHeight } from './typography';
 
 export const theme = {
   colors,

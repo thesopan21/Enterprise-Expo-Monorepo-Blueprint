@@ -1,4 +1,4 @@
-import { breakpoints, colors, radius, shadows, spacing, zIndex } from './index.js';
+import { breakpoints, colors, radius, shadows, spacing, zIndex } from './index';
 
 describe('colors', () => {
   it.each(['light', 'dark'] as const)('%s scheme has a value for every semantic token', (scheme) => {

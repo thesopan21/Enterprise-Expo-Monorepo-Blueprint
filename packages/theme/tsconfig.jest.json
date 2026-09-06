@@ -4,8 +4,6 @@
   "compilerOptions": {
     "module": "CommonJS",
     "moduleResolution": "Node",
-    "isolatedModules": false,
-    "types": ["jest"]
-  },
-  "exclude": []
+    "isolatedModules": false
+  }
 }
