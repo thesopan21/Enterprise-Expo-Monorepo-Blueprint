@@ -1,7 +1,7 @@
-# Phased Implementation Plan — Phases 3–17
+# Phased Implementation Plan — Phases 3–21
 
 Status: **Planning document only — no implementation in this document.**
-Date: 2026-08-23 (Phase 11 — `@workspace/store` — inserted 2026-09-06; see Cross-Phase Notes for the resulting numbering offset against `01_plan_prompt.md`)
+Date: 2026-08-23 (Phase 11 — `@workspace/store` — inserted 2026-09-06; Phase 15 — OTA Updates, Phases 16–17 — `@workspace/analytics`, `@workspace/notifications`, Phase 18 — `@workspace/i18n` — inserted 2026-09-06; see Cross-Phase Notes for the resulting numbering offset against `01_plan_prompt.md`)
 
 This is the required per-phase breakdown (§34 of `01_plan_prompt.md`): every phase carries Objective, Inputs, Changes, Files created, Files modified, Dependencies, Validation, Tests, Known risks, Rollback strategy, and Exit criteria. Phases 0–2 are already implemented and validated — see `00_phase0_discovery.md` and the chat report for their results. Nothing below has been built yet; each phase starts only once the prior one is reviewed and approved.
 
@@ -364,7 +364,7 @@ packages/store/README.md                     (wiring into an app's root Provider
 
 **Tests:** Unit tests for `axiosBaseQuery` — a successful Axios response maps to RTK Query's `{ data }` shape; an `ApiError` (Phase 8) maps to `{ error }` with its `code`/`status` preserved, not a raw Axios error. A store-level test proving the example slice's tag invalidation actually triggers a refetch after its mutation succeeds (the same class of correctness bar Phase 8 set for its own cache/retry logic).
 
-**Known risks:** This package is not consumed by app-one, so its own unit tests and the throwaway wiring check in Validation are the only proof it works until a real app adopts Pattern B — keep the example slice deliberately trivial so it doesn't rot into an unmaintained fake feature. Redux Toolkit + react-redux add real bundle weight (relevant to Phase 16's performance review); a team must consciously add this package, never receive it as a transitive default.
+**Known risks:** This package is not consumed by app-one, so its own unit tests and the throwaway wiring check in Validation are the only proof it works until a real app adopts Pattern B — keep the example slice deliberately trivial so it doesn't rot into an unmaintained fake feature. Redux Toolkit + react-redux add real bundle weight (relevant to Phase 20's performance review); a team must consciously add this package, never receive it as a transitive default.
 
 **Rollback:** Delete `packages/store`; Phase 10's app-one wiring has zero dependency on it (TanStack Query is fully self-contained), so rollback is isolated and risk-free to the rest of the graph.
 
@@ -473,11 +473,175 @@ apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps i
 
 ---
 
-## Phase 15 — Security Review
+## Phase 15 — OTA Updates (`expo-updates` + EAS Update)
+
+**Objective:** Configure `expo-updates` so app-one can receive JavaScript/asset updates over-the-air via EAS Update, without an app-store review cycle for JS-only changes, with a safe rollout/rollback story.
+
+**Inputs:** Phase 12's native build config (prebuild output, `app.json`); Phase 14's EAS project/`EXPO_TOKEN` (the same EAS account provisions both EAS Build and EAS Update).
+
+**Changes:**
+
+- Add `expo-updates` to app-one's dependencies; configure `app.json`'s `updates` field (`url`, `fallbackToCacheTimeout`) and an explicit `runtimeVersion` policy (`appVersion` or a fingerprint-based policy — pick one and document why, since a mismatched runtime version silently stops an OTA update from ever applying, with no error).
+- Define update **channels** (e.g. `production`, `staging`) mapped to EAS Update branches, so a build installed from a given channel only ever receives updates published to that same channel.
+- A minimal in-app update check (`Updates.checkForUpdateAsync()` / `Updates.fetchUpdateAsync()`), or an explicit decision to rely on the default automatic-check-on-launch behavior — document which was chosen and why, rather than silently defaulting.
+- Wire an `eas update --branch <channel>` publish step into Phase 14's `main.yml`/`release.yml`, gated behind the same `EXPO_TOKEN` secret.
+
+**Files created/modified:**
+
+```
+apps/app-one/app.json          (add "updates", "runtimeVersion" fields)
+.github/workflows/main.yml     (modified — add an eas update publish step)
+docs/ota-updates.md            (channel/branch strategy, rollback procedure, runtimeVersion policy rationale)
+```
+
+**Dependencies added:** `expo-updates`.
+
+**Validation:** `expo-doctor` (already part of Phase 14's `pr.yml` gate) passes with `expo-updates` configured; a Development/production build from Phase 12 actually receives a published test update — the only real proof, and it needs a build installed on a device/simulator plus a real `eas update` publish, the same user-provisioned EAS project dependency Phase 14 already flagged.
+
+**Tests:** N/A — native/EAS configuration, not meaningfully unit-testable; validated by the on-device update check in Validation.
+
+**Known risks:** A `runtimeVersion` mismatch between a build and a published update is a common, silent failure mode (the update is simply never offered) — document the exact policy chosen and why. OTA updates can only ship JS/asset changes; any native module or config-plugin change still requires a full rebuild through Phases 12/14, not an OTA update — state this boundary explicitly so it's never mistaken for a way to skip app-store review universally. Requires the same user-provisioned EAS project/`EXPO_TOKEN` as Phase 14.
+
+**Rollback:** Publish a previous known-good update (or `eas update:rollback`) to the affected channel; disabling `expo-updates` entirely reverts to store-review-only releases — an isolated, additive-only removal.
+
+**Exit criteria:** `app.json`'s `updates`/`runtimeVersion` fields configured and documented; at least one test update successfully received on a Development Build; CI has a gated `eas update` publish step; `docs/ota-updates.md` documents the channel strategy and rollback procedure.
+
+---
+
+## Phase 16 — `@workspace/analytics`
+
+**Objective:** A vendor-agnostic analytics/event-tracking package — a thin interface apps use to log events, screen views, and identify users without coupling feature code to a specific analytics SDK (Segment, PostHog, Firebase Analytics, Amplitude, etc.), since no vendor has been chosen for this blueprint.
+
+**Inputs:** None beyond `@workspace/config`. Optionally consumed by Phase 10's auth feature (`identify()` on sign-in, `reset()` on sign-out) — documented as an integration point, not a required change to Phase 10.
+
+**Changes:**
+
+- `AnalyticsClient` interface: `track(event, properties)`, `screen(name, properties)`, `identify(userId, traits)`, `reset()`.
+- `NoopAnalyticsClient` — the default, safe implementation that does nothing; used until a team wires a real vendor.
+- `ConsoleAnalyticsClient` — a dev-only implementation that logs calls to the console, useful for verifying instrumentation before a vendor is chosen.
+- A real vendor SDK is added by the **consuming app**, implementing the same `AnalyticsClient` interface — never a dependency of this package itself, to avoid pulling in an SDK nobody's using.
+- `useScreenTracking` — an optional Expo Router screen-view auto-tracking hook.
+
+**Files created:**
+
+```
+packages/analytics/package.json
+packages/analytics/src/index.ts
+packages/analytics/src/types.ts
+packages/analytics/src/noopAnalyticsClient.ts
+packages/analytics/src/consoleAnalyticsClient.ts
+packages/analytics/src/useScreenTracking.ts
+packages/analytics/README.md                  (vendor wiring guide; explicit "do not track PII" guidance)
+```
+
+**Dependencies added:** none beyond peer `react`/`react-native` (for the tracking hook); a real vendor SDK is the consuming app's dependency, not this package's.
+
+**Validation:** `pnpm --filter @workspace/analytics typecheck`; a throwaway wiring of `NoopAnalyticsClient` into one app screen (mirroring Phases 4–11's bundler-resolution checks), confirming it resolves and never throws, then remove the snippet.
+
+**Tests:** Unit tests for `NoopAnalyticsClient`/`ConsoleAnalyticsClient` (every interface method is callable and never throws); a test proving `useScreenTracking` calls `.screen()` on each route change, using a mocked client.
+
+**Known risks:** Shipping a `NoopAnalyticsClient` as the default means analytics silently does nothing until a team deliberately wires a real vendor — document this loudly so it reads as an intentional default, not a silent gap. Per data-minimization principles (relevant given this is a TruScholar project handling student/client data under DPDP 2023), the README must explicitly warn against passing names, emails, phone numbers, or other PII as event properties.
+
+**Rollback:** Delete `packages/analytics`; nothing else has a hard dependency on it — Phase 10's optional `identify`/`reset` wiring is documented, not mandatory.
+
+**Exit criteria:** Interface plus `Noop`/`Console` implementations typed and unit-tested; README documents vendor wiring and the PII guidance; package typechecks/lints clean.
+
+---
+
+## Phase 17 — `@workspace/notifications`
+
+**Objective:** Push notification permission handling, token registration, and a typed listener interface, built on `expo-notifications` — client-side only, not a complete push solution.
+
+**Inputs:** `expo-notifications` (Expo SDK 57); optionally `@workspace/auth`'s session (to associate a push token with a signed-in user) and `@workspace/storage` (Phase 6, to cache the last-registered token and avoid redundant re-registration).
+
+**Changes:**
+
+- Permission helpers: `requestNotificationPermission()`, `getNotificationPermissionStatus()`.
+- `registerForPushNotifications()` — returns an Expo push token; fails loudly with a clear message rather than a cryptic native crash when run without a Development Build (the same discipline Phase 6 established for MMKV in Expo Go).
+- `useNotificationListener` / `useNotificationResponseListener` — hooks for handling notifications received in the foreground/background and taps on a delivered notification.
+- A typed `NotificationPayload` shape apps extend with their own data fields.
+
+**Files created:**
+
+```
+packages/notifications/package.json
+packages/notifications/src/index.ts
+packages/notifications/src/permissions.ts
+packages/notifications/src/registerPushToken.ts
+packages/notifications/src/useNotificationListener.ts
+packages/notifications/src/useNotificationResponseListener.ts
+packages/notifications/src/types.ts
+packages/notifications/README.md              (Expo Go vs. Development Build constraints; explicitly scopes this as client-side only — no push-sending backend included)
+```
+
+**Dependencies added:** `expo-notifications`.
+
+**Validation:** `pnpm --filter @workspace/notifications typecheck`; real push token registration can only be meaningfully proven on a Development Build or physical device (Phase 12), so this phase's own validation is limited to typecheck plus a mocked-permission unit test — the same honesty precedent Phases 6 and 7 set for MMKV and SecureStore.
+
+**Tests:** Unit tests for permission-status mapping and token-registration error handling, using a mocked `expo-notifications` module (interface contract only).
+
+**Known risks:** Real push delivery needs backend infrastructure (a server calling Expo's push API or FCM/APNs directly) that doesn't exist in this blueprint — this package covers registration and receiving only, not sending; the README must state this boundary explicitly so it's never mistaken for a complete solution. Meaningful testing requires a Development Build, the same Phase 12 dependency Phases 6/7 already carry.
+
+**Rollback:** Delete `packages/notifications`; no other phase has a hard dependency on it.
+
+**Exit criteria:** Permission/registration/listener helpers typed and unit-tested (mocked); README explicitly scopes what this package does and does not cover; package typechecks/lints clean.
+
+---
+
+## Phase 18 — `@workspace/i18n`
+
+**Objective:** Centralized internationalization support — device locale detection, key-based string translation, and a persisted user locale override — extending `@workspace/utils`'s existing date/currency/number formatters (Phase 9, currently hardcoded to `en-IN`/INR) rather than introducing a second, competing formatting system.
+
+**Inputs:** `expo-localization` (device locale/calendar preferences); `@workspace/storage` (Phase 6, to persist a user-chosen language override); `@workspace/utils` (Phase 9) — this phase revisits its `date`/`currency`/`number` formatters to accept an optional `locale` parameter rather than replacing them.
+
+**Changes:**
+
+- `LocaleProvider` / `useLocale` — detects the device locale via `expo-localization`, exposes the current locale plus a `setLocale()` override persisted through `@workspace/storage`.
+- Key-based translation lookup (`t(key, params)`) backed by JSON locale resource files. Whether this uses `i18next`/`react-i18next` (the RN-ecosystem standard) or a minimal hand-rolled lookup is an explicit vendor decision this phase must make and document — the same kind of vetting Phase 6 did for MMKV vs. AsyncStorage, not a silent default.
+- `useTranslation` — a thin wrapper so app code imports from `@workspace/i18n`, never the underlying vendor library directly (keeps the vendor swappable later).
+- Extend `@workspace/utils`'s `date.ts`/`currency.ts`/`number.ts` (Phase 9) with an optional `locale` parameter, default unchanged (`en-IN`/INR) — additive, backward compatible, not a breaking change to their existing signatures.
+- A starter `en.json` locale resource (structure only) as a template apps extend with real translations and additional languages.
+- RTL layout support (`I18nManager.forceRTL`) is documented as a known follow-up for whenever an RTL language is actually added — explicitly not implemented speculatively now.
+
+**Files created:**
+
+```
+packages/i18n/package.json
+packages/i18n/src/index.ts
+packages/i18n/src/LocaleProvider.tsx
+packages/i18n/src/useLocale.ts
+packages/i18n/src/useTranslation.ts
+packages/i18n/src/locales/en.json
+packages/i18n/README.md                (adding a new language; RTL follow-up note; relationship to @workspace/utils' locale-aware formatters)
+```
+
+**Files modified:**
+
+```
+packages/utils/src/date.ts             (optional locale param, default unchanged)
+packages/utils/src/currency.ts         (optional locale/currency param, default unchanged)
+packages/utils/src/number.ts           (optional locale param, default unchanged)
+```
+
+**Dependencies added:** `expo-localization`; `i18next` + `react-i18next` pending the vendor-vetting decision above.
+
+**Validation:** `pnpm --filter @workspace/i18n typecheck`; a throwaway wiring of `LocaleProvider` + one `useTranslation()` call into an app screen (mirroring prior phases' bundler-resolution checks); re-run Phase 9's existing `@workspace/utils` test suite to confirm the new optional `locale` parameter doesn't change its already-asserted `en-IN`/INR defaults.
+
+**Tests:** Unit tests for `useLocale`'s device-locale detection (mocked `expo-localization`) and persisted override read/write (mocked storage adapter, matching Phases 6/7's testing pattern); a test confirming `t()` falls back to the key itself, not a crash, when a translation is missing.
+
+**Known risks:** Retrofitting a `locale` parameter onto Phase 9's already-shipped formatters is a signature change to a package other phases may already consume — it must stay backward compatible (optional, default unchanged) so existing app code never breaks. RTL support is deliberately scoped out (documented only); do not half-implement it.
+
+**Rollback:** Delete `packages/i18n`; revert the additive, backward-compatible `locale`-parameter changes to `@workspace/utils` if unwanted — isolated, since the parameter is optional everywhere.
+
+**Exit criteria:** Locale detection/override and translation lookup are typed and unit-tested; the extended `@workspace/utils` formatters keep their existing tests passing unmodified; README documents adding a new language and the RTL follow-up; package typechecks/lints clean.
+
+---
+
+## Phase 19 — Security Review
 
 **Objective:** Full audit per §23: token storage, logging, error reporting, env vars, secrets, deep links, debug logs, sensitive analytics, clipboard, screenshots.
 
-**Inputs:** Completed `auth`/`api`/`storage` packages (Phases 6–8), app config (Phase 10).
+**Inputs:** Completed `auth`/`api`/`storage` packages (Phases 6–8), app config (Phase 10), OTA update config (Phase 15), `analytics`/`notifications` packages (Phases 16–17, for the checklist's "sensitive analytics" and push-payload items).
 
 **Changes:** No new features — this phase is an audit pass, output as a findings document plus any necessary fixes (e.g., stripping an accidental `console.log(accessToken)`, confirming `EXPO_PUBLIC_*` contains no secrets per §24).
 
@@ -495,7 +659,7 @@ apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps i
 
 ---
 
-## Phase 16 — Performance Review
+## Phase 20 — Performance Review
 
 **Objective:** Audit per §30 — rendering, re-renders, list virtualization, images, memory, network, query caching, startup time, bundle size, native modules, animations, JS/UI thread — measured, not guessed.
 
@@ -517,11 +681,11 @@ apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps i
 
 ---
 
-## Phase 17 — Final Architecture Audit
+## Phase 21 — Final Architecture Audit
 
 **Objective:** Check every requirement in the original spec against what was actually built, per §35 Phase 16 and the §40 Final Checklist.
 
-**Inputs:** Everything from Phases 0–16.
+**Inputs:** Everything from Phases 0–20.
 
 **Changes:** No code — output only.
 
@@ -541,7 +705,7 @@ apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps i
 
 ## Cross-Phase Notes
 
-- **Numbering offset against `01_plan_prompt.md`:** Phase 11 (`@workspace/store`) was inserted on 2026-09-06 and is not present in the original master spec (`01_plan_prompt.md`), which goes directly from its own Phase 10 to its own Phase 11 ("Native/CNG"). From this document's Phase 12 onward, our phase numbers are the master spec's phase number **+1** (our Phase 12 = spec's Phase 11, ... our Phase 17 = spec's Phase 16). Citations like "§35 Phase 16" inside Phase 17 refer to the master spec's own numbering, not this document's heading numbers.
-- **Environment constraint:** this sandbox has no confirmed iOS/Android native toolchain. Phases 12, 13 (E2E), and parts of 16 require either a machine with Xcode/Android SDK or `eas build --profile development` runs, which need the user's Expo account/EAS project — flagged here rather than discovered late, per the master prompt's explicit instruction not to let this surface only at the end.
+- **Numbering offset against `01_plan_prompt.md`:** Four insertions not present in the original master spec have shifted this document's numbering, in four steps. (1) Phase 11 (`@workspace/store`) was inserted 2026-09-06, so from this document's Phase 12 through 14, our numbers are the master spec's phase number **+1** (our Phase 12 = spec's Phase 11, our Phase 14 = spec's Phase 13). (2) Phase 15 (OTA Updates) was also inserted 2026-09-06, so from Phase 16 our numbers are the master spec's phase number **+2**. (3) Phases 16–17 (`@workspace/analytics`, `@workspace/notifications`) were also inserted 2026-09-06, so from Phase 18 our numbers are the master spec's phase number **+4**. (4) Phase 18 (`@workspace/i18n`) was also inserted 2026-09-06, so from this document's Phase 19 onward, our numbers are the master spec's phase number **+5** (our Phase 19 = spec's Phase 14 "Security Review", our Phase 21 = spec's Phase 16 "Final Architecture Audit"). Citations like "§35 Phase 16" inside Phase 21 refer to the master spec's own numbering, not this document's heading numbers.
+- **Environment constraint:** this sandbox has no confirmed iOS/Android native toolchain. Phases 12, 13 (E2E), and parts of 20 require either a machine with Xcode/Android SDK or `eas build --profile development` runs, which need the user's Expo account/EAS project — flagged here rather than discovered late, per the master prompt's explicit instruction not to let this surface only at the end.
 - **EAS/GitHub secrets:** Phase 14's CI/CD and any real Phase 12 EAS builds need user-provisioned `EXPO_TOKEN` and an EAS project — a decision/action point for the user, not something implementable unilaterally.
 - **Sequencing is strict:** each phase above assumes the previous one's exit criteria were met, matching §34's "do not proceed until the current phase passes validation."
