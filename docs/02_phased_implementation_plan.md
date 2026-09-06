@@ -686,15 +686,15 @@ packages/i18n/README.md                (vendor decision rationale; adding a new 
 
 **Files created:** `docs/security-review-findings.md` (or fixed inline if code changes are needed — tracked in that same doc either way).
 
-**Validation:** Grep audit for `console.log` near token/password variable names; review of `app.config.ts`/`eas.json` for any secret committed as `EXPO_PUBLIC_*`; confirm production builds have `__DEV__`-gated logging only.
+**Validation:** Grep audit for `console.log` near token/password variable names; review of `app.json`/CI workflows for any secret committed as `EXPO_PUBLIC_*` or hardcoded; confirm production builds have `__DEV__`-gated logging only. All performed directly against the current codebase (not assumed from memory of earlier phases) — see `docs/security-review-findings.md` for the exact evidence behind each item.
 
-**Tests:** N/A — audit, not a code-shipping phase (though findings may trigger small fixes validated by existing test suites).
+**Tests:** N/A — audit, not a code-shipping phase. No fixes were needed this pass (every finding was either already mitigated by existing design or a documented, not-yet-exploitable latent risk), so no test suite changes were triggered.
 
-**Known risks:** A security review is only as good as its checklist; this phase's exit criteria is explicitly the §23 checklist, not an open-ended audit.
+**Known risks:** A security review is only as good as its checklist; this phase's exit criteria is explicitly the §23 checklist, not an open-ended audit. Two real (but currently inert) findings surfaced: (1) `ApiError`'s `.cause` retains the raw `AxiosError`, which includes the live `Authorization` header in `config.headers` — harmless today since no error-reporting SDK exists to leak it anywhere, but must be scrubbed before one is ever added; (2) the shared `demo@example.com`/`password123` mock credentials appear in both `authApi.ts` and the Phase 13 Maestro flow — harmless since no real backend/data exists behind them, but must be replaced together once one does. Both documented with recommendations, not fixed, since fixing (1) means editing code with no real consumer yet and fixing (2) would break the one working E2E flow for no present benefit — see the findings doc for the reasoning.
 
 **Rollback:** N/A.
 
-**Exit criteria:** Every item in §23's list explicitly checked off with a pass/fail/fixed status in the findings doc.
+**Exit criteria:** Every item in §23's list explicitly checked off with a pass/N-A/risk status in `docs/security-review-findings.md` — done. 10 of 12 items PASS outright, 1 is N/A with a documented follow-up (screenshot prevention — no sensitive screen exists yet to protect), 1 is a documented latent RISK with a concrete recommendation (error reporting — no error-reporting SDK exists yet to actually leak anything through). No code changes were required.
 
 ---
 
