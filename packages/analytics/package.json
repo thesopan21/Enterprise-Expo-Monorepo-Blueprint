@@ -1,0 +1,35 @@
+{
+  "name": "@workspace/analytics",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
+  },
+  "peerDependencies": {
+    "expo-router": "^57.0.0",
+    "react": "^19.0.0",
+    "react-native": "^0.86.0"
+  },
+  "devDependencies": {
+    "@react-native/jest-preset": "0.86.3",
+    "@testing-library/react-native": "^14.0.1",
+    "@types/jest": "^30.0.0",
+    "@types/react": "~19.2.2",
+    "@workspace/config": "workspace:*",
+    "babel-preset-expo": "^57.0.10",
+    "eslint": "^9.39.1",
+    "expo-router": "~57.0.15",
+    "globals": "^16.5.0",
+    "jest": "^30.5.1",
+    "jest-expo": "^57.0.5",
+    "react": "19.2.3",
+    "react-native": "0.86.2",
+    "test-renderer": "^1.2.0",
+    "typescript": "~6.0.3"
+  }
+}

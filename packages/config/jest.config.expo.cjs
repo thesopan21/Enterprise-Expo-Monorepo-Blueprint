@@ -11,4 +11,8 @@ module.exports = {
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',
+  // A broken/unreachable watchman on the host makes Jest silently no-op
+  // (exit 0, zero suites run, zero output) instead of falling back or
+  // erroring — so don't depend on it being present or healthy at all.
+  watchman: false,
 };

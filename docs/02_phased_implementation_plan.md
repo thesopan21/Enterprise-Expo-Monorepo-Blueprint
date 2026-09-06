@@ -437,6 +437,8 @@ apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps i
 
 **Exit criteria:** `pnpm test` green from root; one working E2E flow proven on at least one platform.
 
+**Errata (found during Phase 16):** on a host where `watchman` is present on `PATH` but broken (here: permission denied creating its own state directory), Jest silently no-ops — exit code 0, zero output, zero test suites actually run — instead of falling back to its own file crawler or raising an error. `turbo run test` reporting "successful" only reflects that exit code, so every `pnpm test` run in an affected environment can report a false pass while running nothing. Confirmed via `--no-watchman` (`Test Suites: N passed` instead of silence) across both the `ts-jest`/node config and the `jest-expo` config. Fixed by adding `watchman: false` to both `packages/config/jest.config.base.cjs` and `packages/config/jest.config.expo.cjs`, so Jest never depends on watchman being present or healthy. Re-ran the full suite after the fix: all 10 packages/apps, 142 tests, genuinely passing.
+
 ---
 
 ## Phase 14 — CI/CD
@@ -539,32 +541,40 @@ docs/ota-updates.md            (channel/branch strategy, rollback procedure, run
 **Changes:**
 
 - `AnalyticsClient` interface: `track(event, properties)`, `screen(name, properties)`, `identify(userId, traits)`, `reset()`.
-- `NoopAnalyticsClient` — the default, safe implementation that does nothing; used until a team wires a real vendor.
-- `ConsoleAnalyticsClient` — a dev-only implementation that logs calls to the console, useful for verifying instrumentation before a vendor is chosen.
+- `noopAnalyticsClient` — the default, safe implementation that does nothing; used until a team wires a real vendor. (Named in camelCase, like `mmkvStorage`/`memoryStorage` in `@workspace/storage` — a singleton instance implementing an interface, not a class — for consistency with the rest of the repo, despite the PascalCase used when this phase was originally sketched above.)
+- `consoleAnalyticsClient` — a dev-only implementation that logs calls to the console, useful for verifying instrumentation before a vendor is chosen.
 - A real vendor SDK is added by the **consuming app**, implementing the same `AnalyticsClient` interface — never a dependency of this package itself, to avoid pulling in an SDK nobody's using.
-- `useScreenTracking` — an optional Expo Router screen-view auto-tracking hook.
+- `useScreenTracking` — an optional Expo Router screen-view auto-tracking hook, reading a caller-supplied `properties` object via ref (not a `useEffect` dependency) so it doesn't re-fire on every render when the caller passes a fresh object literal.
 
 **Files created:**
 
 ```
 packages/analytics/package.json
+packages/analytics/tsconfig.json
+packages/analytics/jest.config.cjs
+packages/analytics/eslint.config.mjs
 packages/analytics/src/index.ts
 packages/analytics/src/types.ts
 packages/analytics/src/noopAnalyticsClient.ts
+packages/analytics/src/noopAnalyticsClient.test.ts
 packages/analytics/src/consoleAnalyticsClient.ts
+packages/analytics/src/consoleAnalyticsClient.test.ts
 packages/analytics/src/useScreenTracking.ts
+packages/analytics/src/useScreenTracking.test.ts
 packages/analytics/README.md                  (vendor wiring guide; explicit "do not track PII" guidance)
 ```
 
-**Dependencies added:** none beyond peer `react`/`react-native` (for the tracking hook); a real vendor SDK is the consuming app's dependency, not this package's.
+**Dependencies added:** none beyond peer `react`/`react-native`/`expo-router` (the latter two only for the tracking hook); a real vendor SDK is the consuming app's dependency, not this package's.
 
-**Validation:** `pnpm --filter @workspace/analytics typecheck`; a throwaway wiring of `NoopAnalyticsClient` into one app screen (mirroring Phases 4–11's bundler-resolution checks), confirming it resolves and never throws, then remove the snippet.
+**Validation:** `pnpm --filter @workspace/analytics typecheck`/`lint`/`test` all pass. Performed the throwaway wiring check for real: temporarily added `@workspace/analytics` to app-one's `package.json` and called `useScreenTracking(noopAnalyticsClient)` from the root layout, ran `expo export --platform web` (the same Metro bundler-resolution check that caught Phase 4's `.js`-extension bug), confirmed a clean export with no resolution errors, then removed both the snippet and the temporary dependency — `git diff` on both touched files came back empty, confirming a clean revert.
 
-**Tests:** Unit tests for `NoopAnalyticsClient`/`ConsoleAnalyticsClient` (every interface method is callable and never throws); a test proving `useScreenTracking` calls `.screen()` on each route change, using a mocked client.
+**Tests:** Unit tests for `noopAnalyticsClient`/`consoleAnalyticsClient` (every interface method is callable and never throws, including with optional arguments omitted; `consoleAnalyticsClient`'s test also asserts what it logs). A `useScreenTracking` test suite (mocking `expo-router`'s `usePathname`) proving it calls `.screen()` on mount, again on a pathname change, and _not_ again on a re-render with an unchanged pathname. All 7 tests pass.
 
-**Known risks:** Shipping a `NoopAnalyticsClient` as the default means analytics silently does nothing until a team deliberately wires a real vendor — document this loudly so it reads as an intentional default, not a silent gap. Per data-minimization principles (relevant given this is a TruScholar project handling student/client data under DPDP 2023), the README must explicitly warn against passing names, emails, phone numbers, or other PII as event properties.
+**Known risks:** Shipping `noopAnalyticsClient` as the default means analytics silently does nothing until a team deliberately wires a real vendor — document this loudly so it reads as an intentional default, not a silent gap (done, in the README's first section). Per data-minimization principles (relevant given this is a TruScholar project handling student/client data under DPDP 2023), the README explicitly warns against passing names, emails, phone numbers, or other PII as event properties or `identify()` traits.
 
 **Rollback:** Delete `packages/analytics`; nothing else has a hard dependency on it — Phase 10's optional `identify`/`reset` wiring is documented, not mandatory.
+
+**Exit criteria:** All met — package created with the interface plus both implementations plus the tracking hook; `typecheck`/`lint`/`test` green; real bundler-resolution check performed and reverted cleanly; README documents vendor wiring and PII guidance.
 
 **Exit criteria:** Interface plus `Noop`/`Console` implementations typed and unit-tested; README documents vendor wiring and the PII guidance; package typechecks/lints clean.
 
