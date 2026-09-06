@@ -1,6 +1,7 @@
 import { palette } from "@workspace/theme";
+import { Image, type ImageSource } from "expo-image";
 import type { Icon } from "phosphor-react-native";
-import { Image, StyleSheet, View, type ImageSourcePropType } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { Typography } from "../Typography/Typography";
 
@@ -8,7 +9,7 @@ export type AvatarSize = "sm" | "md" | "lg";
 
 export type AvatarProps = {
   label: string;
-  source?: ImageSourcePropType;
+  source?: ImageSource;
   icon?: Icon;
   size?: AvatarSize;
 };

@@ -708,15 +708,24 @@ packages/i18n/README.md                (vendor decision rationale; adding a new 
 
 **Files created:** `docs/performance-review-findings.md`.
 
-**Validation:** Expo's bundle size report (`expo export` output sizes, already observed in Phase 2: ~2MB web JS bundle as a baseline), React DevTools Profiler for re-render audits, cold-start timing on a Development Build.
+**Files modified:**
 
-**Tests:** N/A — measurement-driven, any resulting optimization is validated by the existing test suite (Phase 13) plus before/after measurements in the findings doc.
+```
+apps/app-one/src/app/_layout.tsx    (wire up useFonts() — custom fonts were never loading, see below)
+packages/ui/src/Avatar/Avatar.tsx   (react-native Image -> expo-image)
+packages/ui/package.json            (expo-image added as peer/dev dependency)
+apps/app-one/package.json           (removed 5 confirmed-unused native module dependencies)
+```
 
-**Known risks:** Meaningful native performance measurement (startup time, JS/UI thread) needs Phase 12's on-device build; cannot be fully done from Metro web export alone. If Phase 11's `@workspace/store` is ever adopted by an app, its Redux Toolkit/react-redux bundle-size cost should be measured here rather than assumed negligible.
+**Validation:** Real `expo export` bundle-size measurements for web (7.1MB raw / ~1.4MB gzip) and native Hermes bytecode (Android/iOS, before and after this phase's fixes); a real Android cold-launch timing via `adb logcat` on the live emulator (caveated as dev-mode, not production-representative); `expo-doctor`; full repo `typecheck`/`lint`/`test`. The plan's own citation of "~2MB web JS bundle as a baseline from Phase 2" could not be located in `docs/00_phase0_discovery.md` or anywhere else — likely an assumption from when this plan was authored, not an actual recorded measurement; not chased further given the current numbers are freshly and directly measured.
 
-**Rollback:** N/A.
+**Tests:** N/A — measurement-driven. No test suite changes were needed; the existing suite (161 tests across 12 packages) re-validated clean after every fix in this phase.
 
-**Exit criteria:** Every §30 category has a documented measurement and either a "no action needed" or a specific, justified change.
+**Known risks:** Meaningful native performance measurement (production startup time, JS/UI thread under real load) needs an actual release-profile native build, which no phase before this one has produced — deferred, not faked with a dev-mode number presented as representative. If Phase 11's `@workspace/store` is ever adopted by an app, its Redux Toolkit/react-redux bundle-size cost should be measured here rather than assumed negligible (still true; `@workspace/store` remains unadopted by app-one, so this wasn't measurable this phase either).
+
+**Rollback:** N/A for the audit itself. The three fixes made (font loading, `expo-image` swap, native module removals) are each independently revertable via their own diffs if ever needed — none touch shared package interfaces other packages depend on.
+
+**Exit criteria:** Every §30 category has a documented measurement and either a "no action needed" or a specific, justified change — done, see `docs/performance-review-findings.md`. One real bug was found and fixed in the process (custom fonts silently never loading) beyond what a pure audit would have required, since it surfaced directly from measuring the "rendering" and "bundle size" categories.
 
 ---
 
