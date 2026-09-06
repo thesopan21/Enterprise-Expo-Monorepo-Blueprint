@@ -1,4 +1,4 @@
 {
   "files": [],
-  "references": [{ "path": "apps/app-one" }]
+  "references": [{ "path": "apps/app-one" }, { "path": "packages/theme" }]
 }
