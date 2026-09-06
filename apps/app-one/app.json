@@ -7,7 +7,8 @@
     "scheme": "appone",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/appIcons/icon.png"
+      "icon": "./assets/images/appIcons/icon.png",
+      "bundleIdentifier": "com.anonymous.appone"
     },
     "android": {
       "adaptiveIcon": {
@@ -16,7 +17,8 @@
         "backgroundImage": "./assets/images/appIcons/android-icon-background.png",
         "monochromeImage": "./assets/images/appIcons/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.appone"
     },
     "web": {
       "output": "static",
