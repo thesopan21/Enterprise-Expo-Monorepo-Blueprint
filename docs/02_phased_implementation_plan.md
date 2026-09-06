@@ -635,10 +635,10 @@ packages/notifications/README.md              (Expo Go vs. Development Build con
 
 **Changes:**
 
-- `LocaleProvider` / `useLocale` — detects the device locale via `expo-localization`, exposes the current locale plus a `setLocale()` override persisted through `@workspace/storage`.
-- Key-based translation lookup (`t(key, params)`) backed by JSON locale resource files. Whether this uses `i18next`/`react-i18next` (the RN-ecosystem standard) or a minimal hand-rolled lookup is an explicit vendor decision this phase must make and document — the same kind of vetting Phase 6 did for MMKV vs. AsyncStorage, not a silent default.
-- `useTranslation` — a thin wrapper so app code imports from `@workspace/i18n`, never the underlying vendor library directly (keeps the vendor swappable later).
-- Extend `@workspace/utils`'s `date.ts`/`currency.ts`/`number.ts` (Phase 9) with an optional `locale` parameter, default unchanged (`en-IN`/INR) — additive, backward compatible, not a breaking change to their existing signatures.
+- `LocaleProvider` / `useLocale` — detects the device locale via `expo-localization`'s `useLocales()`, exposes the current locale plus a `setLocale()` override persisted through an injected `@workspace/storage` `Storage` adapter (never a concrete implementation imported directly — same DI discipline as `createSessionManager`/`createAppStore`).
+- Key-based translation lookup (`t(key, params)`) backed by JSON locale resource files. **Vendor decision: `i18next` + `react-i18next`** (the RN-ecosystem standard), not a hand-rolled lookup — documented rationale in the README: pluralization/interpolation across many languages is a correctness minefield i18next has already solved, and the `useTranslation` abstraction boundary (below) means this choice stays swappable later at negligible cost, unlike Phase 6's MMKV-vs-AsyncStorage choice which had no such boundary.
+- `useTranslation` — a thin wrapper so app code imports from `@workspace/i18n`, never `react-i18next` directly (keeps the vendor swappable later).
+- `@workspace/utils`'s `date.ts`/`currency.ts`/`number.ts` (Phase 9) **already had** an optional `locale` parameter (and `currency.ts` an optional `currency` parameter too), default unchanged (`en-IN`/INR) — built in from Phase 9 rather than retrofitted here. Confirmed by reading the current source and re-running Phase 9's test suite (52/52 still passing, unmodified) rather than assuming the plan's original premise (that this phase needed to add the parameter) still held.
 - A starter `en.json` locale resource (structure only) as a template apps extend with real translations and additional languages.
 - RTL layout support (`I18nManager.forceRTL`) is documented as a known follow-up for whenever an RTL language is actually added — explicitly not implemented speculatively now.
 
@@ -646,33 +646,33 @@ packages/notifications/README.md              (Expo Go vs. Development Build con
 
 ```
 packages/i18n/package.json
+packages/i18n/tsconfig.json
+packages/i18n/jest.config.cjs
+packages/i18n/eslint.config.mjs
 packages/i18n/src/index.ts
+packages/i18n/src/i18n.ts              (internal i18next singleton setup — not exported, keeps the vendor swappable)
 packages/i18n/src/LocaleProvider.tsx
+packages/i18n/src/LocaleProvider.test.tsx
 packages/i18n/src/useLocale.ts
 packages/i18n/src/useTranslation.ts
+packages/i18n/src/useTranslation.test.tsx
 packages/i18n/src/locales/en.json
-packages/i18n/README.md                (adding a new language; RTL follow-up note; relationship to @workspace/utils' locale-aware formatters)
+packages/i18n/README.md                (vendor decision rationale; adding a new language; RTL follow-up note; relationship to @workspace/utils' locale-aware formatters)
 ```
 
-**Files modified:**
+**Files modified:** none — see the Phase 9 formatters note above; no retrofit was needed.
 
-```
-packages/utils/src/date.ts             (optional locale param, default unchanged)
-packages/utils/src/currency.ts         (optional locale/currency param, default unchanged)
-packages/utils/src/number.ts           (optional locale param, default unchanged)
-```
+**Dependencies added:** `expo-localization` (`~57.0.1`, version confirmed via a throwaway `expo install` in app-one, then reverted — same technique as Phases 15/17); `i18next` + `react-i18next` (regular `dependencies`, not peer — this package fully owns the vendor choice internally, unlike `expo-localization` which is a peer since it's a native module the consuming app must supply, matching `@workspace/ui`'s `@workspace/theme`-as-dependency vs. `react-native`-as-peer convention).
 
-**Dependencies added:** `expo-localization`; `i18next` + `react-i18next` pending the vendor-vetting decision above.
+**Validation:** `pnpm --filter @workspace/i18n typecheck`/`lint`/`test` all pass. Performed the throwaway wiring check for real: temporarily added `@workspace/i18n`, `@workspace/storage`, and `expo-localization` to app-one, wrapped the root layout in `LocaleProvider` with `memoryStorage`, called `useTranslation()` and `console.log`'d a real translated string, ran `expo export --platform web` — the log actually printed `"OK"` (once per prerendered static route), proving the translation resolves at runtime, not just that it bundles — then reverted the snippet and dependencies cleanly (`git diff` came back empty). Re-ran Phase 9's `@workspace/utils` suite: 52/52 passing, unmodified.
 
-**Validation:** `pnpm --filter @workspace/i18n typecheck`; a throwaway wiring of `LocaleProvider` + one `useTranslation()` call into an app screen (mirroring prior phases' bundler-resolution checks); re-run Phase 9's existing `@workspace/utils` test suite to confirm the new optional `locale` parameter doesn't change its already-asserted `en-IN`/INR defaults.
+**Tests:** Unit tests for `useLocale`'s device-locale detection (mocked `expo-localization`), persisted override read/write (mocked `Storage` adapter, matching Phases 6/7's testing pattern), `setLocale()` persisting and updating context, and throwing outside a `LocaleProvider`. A `useTranslation` test confirming `t()` returns a real configured translation, and separately falls back to the key itself, not a crash, when the translation is missing. 6 tests total, all passing, 100% coverage.
 
-**Tests:** Unit tests for `useLocale`'s device-locale detection (mocked `expo-localization`) and persisted override read/write (mocked storage adapter, matching Phases 6/7's testing pattern); a test confirming `t()` falls back to the key itself, not a crash, when a translation is missing.
+**Known risks:** RTL support is deliberately scoped out (documented only, with a concrete follow-up checklist in the README); do not half-implement it. Adding a new language currently means editing `packages/i18n/src/i18n.ts`'s `resources` object directly (a shared package file), not a per-app extension point — acceptable for this phase's explicit "structure only" scope, but worth revisiting if multiple apps need genuinely different language sets.
 
-**Known risks:** Retrofitting a `locale` parameter onto Phase 9's already-shipped formatters is a signature change to a package other phases may already consume — it must stay backward compatible (optional, default unchanged) so existing app code never breaks. RTL support is deliberately scoped out (documented only); do not half-implement it.
+**Rollback:** Delete `packages/i18n`; nothing in `@workspace/utils` needs reverting since no retrofit was made.
 
-**Rollback:** Delete `packages/i18n`; revert the additive, backward-compatible `locale`-parameter changes to `@workspace/utils` if unwanted — isolated, since the parameter is optional everywhere.
-
-**Exit criteria:** Locale detection/override and translation lookup are typed and unit-tested; the extended `@workspace/utils` formatters keep their existing tests passing unmodified; README documents adding a new language and the RTL follow-up; package typechecks/lints clean.
+**Exit criteria:** All met — locale detection/override and translation lookup are typed and unit-tested; `@workspace/utils` formatters' existing tests pass unmodified (no changes were needed); README documents the vendor decision, adding a new language, and the RTL follow-up; package typechecks/lints/tests clean.
 
 ---
 
