@@ -1,159 +1,87 @@
-# Turborepo starter
+# Enterprise Expo Monorepo Blueprint
 
-This Turborepo starter is maintained by the Turborepo core team.
+A pnpm/Turborepo monorepo blueprint for Expo (React Native) apps —
+shared design tokens, UI components, storage, auth, API client, and
+optional analytics/notifications/i18n packages, seeded once and reused
+across every future app added to this repo.
 
-## Using this example
+> **Start here:** [`ARCHITECTURE.md`](./ARCHITECTURE.md) for how the pieces
+> fit together, [`DEVELOPMENT.md`](./DEVELOPMENT.md) to get running locally,
+> [`docs/02_phased_implementation_plan.md`](./docs/02_phased_implementation_plan.md)
+> for the full build history, and
+> [`docs/final-architecture-audit.md`](./docs/final-architecture-audit.md)
+> for where things currently stand against the original spec.
 
-Run the following command:
+## Repository structure
 
-```sh
-npx create-turbo@latest
+```text
+apps/
+  app-one/               Expo Router app (SDK 57, React Native 0.86, New Architecture)
+packages/
+  config/                Shared tsconfig/eslint/prettier/jest base configs
+  theme/                 Design tokens (colors, spacing, typography, radius, shadows)
+  ui/                     Presentational component library (Button, Input, Card, ...)
+  storage/               Key-value storage adapters (MMKV, in-memory)
+  auth/                  Session lifecycle, SecureStore-backed token storage
+  api/                   Axios client, auth/refresh interceptors, normalized errors
+  hooks/ utils/          Small, dependency-light shared primitives
+  store/                 Optional Redux Toolkit + RTK Query pattern (not wired into app-one)
+  analytics/             Vendor-agnostic analytics interface (noop by default)
+  notifications/         Push notification permissions/registration/listeners
+  i18n/                  Locale detection + i18next-backed translation
+docs/
+  01_plan_prompt.md                    Master specification this blueprint was built against
+  02_phased_implementation_plan.md     Per-phase build log (Objective/Changes/Validation/... per phase)
+  adr/                                 Architecture Decision Records (ADR-001 .. ADR-008)
+  *-review-findings.md                 Security/performance audit findings
+  final-architecture-audit.md          §40 checklist traced to real evidence
 ```
 
-## What's inside?
+## Package responsibilities and dependency rules
 
-This Turborepo includes the following packages/apps:
+See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full graph and the rule
+each package follows (one responsibility, native modules as peer
+dependencies, one-way dependency direction). The short version:
+`ui` depends on `theme`; `api` depends on `auth`'s types; nothing depends on
+an app; every optional package (`store`, `analytics`, `notifications`,
+`i18n`) is a real, installable package an app opts into, not just
+documentation.
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+## Getting started
 
 ```sh
-cd my-turborepo
-turbo build
+pnpm install
+pnpm --filter app-one start
 ```
 
-Without global `turbo`, use your package manager:
+See [`DEVELOPMENT.md`](./DEVELOPMENT.md) for the full setup (native
+toolchain requirements, environment variables, common Metro/pnpm/native
+issues) and [`DEPLOYMENT.md`](./DEPLOYMENT.md) for EAS builds, OTA updates,
+and CI/CD.
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
-```
+## Common commands
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+| Command                                      | What it does                           |
+| -------------------------------------------- | -------------------------------------- |
+| `pnpm lint` / `pnpm typecheck` / `pnpm test` | Run across every package via Turborepo |
+| `pnpm format` / `pnpm format:check`          | Prettier, write or check-only          |
+| `pnpm --filter <package> <script>`           | Run a script in one package only       |
+| `pnpm --filter app-one start`                | Start Metro for the app                |
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+## Documentation index
 
-```sh
-turbo build --filter=docs
-```
+| Doc                                                                            | Covers                                                             |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| [`ARCHITECTURE.md`](./ARCHITECTURE.md)                                         | Package graph, dependency rules, key architectural decisions       |
+| [`CONTRIBUTING.md`](./CONTRIBUTING.md)                                         | Adding a package/app, PR expectations, commit style                |
+| [`DEVELOPMENT.md`](./DEVELOPMENT.md)                                           | Local setup, native builds, environment variables, troubleshooting |
+| [`DEPLOYMENT.md`](./DEPLOYMENT.md)                                             | EAS builds, OTA updates, CI/CD, release process                    |
+| [`SECURITY.md`](./SECURITY.md)                                                 | Token storage, what never to log, reporting a vulnerability        |
+| [`docs/adr/`](./docs/adr/)                                                     | ADR-001 through ADR-008, one per major architectural choice        |
+| [`docs/security-review-findings.md`](./docs/security-review-findings.md)       | Phase 19's §23 audit                                               |
+| [`docs/performance-review-findings.md`](./docs/performance-review-findings.md) | Phase 20's §30 audit                                               |
+| [`docs/final-architecture-audit.md`](./docs/final-architecture-audit.md)       | Phase 21's §40 checklist, traced to evidence                       |
 
-Without global `turbo`:
+## License
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+MIT — see [`LICENSE.md`](./LICENSE.md).

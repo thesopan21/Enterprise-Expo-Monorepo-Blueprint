@@ -739,15 +739,15 @@ apps/app-one/package.json           (removed 5 confirmed-unused native module de
 
 **Files created:** `docs/final-architecture-audit.md` — a table of `Requirement | Implemented? | File | Validation | Status` covering every line of the §40 checklist, plus the six required docs from §32 (`README.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`, `DEVELOPMENT.md`, `DEPLOYMENT.md`, `SECURITY.md`) and the eight ADRs from §33 (`ADR-001` through `ADR-008`), authored during this phase if not already produced incrementally alongside their respective phases.
 
-**Validation:** Every checklist row traces to a real file/command already validated in an earlier phase — this phase does not re-invent validation, it aggregates it.
+**Validation:** Every checklist row traces to a real file/command already validated in an earlier phase — this phase does not re-invent validation, it aggregates it. Re-confirmed this phase: no duplicate `react`/`react-native` versions (`grep` against `pnpm-lock.yaml`), no broken symlinks, full `pnpm typecheck`/`lint`/`test`/`format:check` still clean across all 12 packages (161 tests) after this phase's doc-only changes.
 
 **Tests:** N/A.
 
-**Known risks:** If any earlier phase was skipped or partially done, this phase is where that becomes visible — by design.
+**Known risks:** If any earlier phase was skipped or partially done, this phase is where that becomes visible — by design. It found exactly one such gap: **no dedicated Accessibility Review phase was ever scheduled** in this document (§40's "Accessibility reviewed" checklist item) — ad-hoc `accessibilityRole`/`accessibilityLabel`/`accessibilityState` props exist throughout `@workspace/ui`, but no systematic audit (screen reader, contrast, dynamic type, focus order) was ever performed. Documented in `docs/final-architecture-audit.md`, not retrofitted here (this phase is explicitly "no code, output only"). Also surfaced: `README.md` had never been updated since the original `create-turbo` scaffold — still referencing removed Next.js apps and `@repo/*` packages 20 phases later — now replaced; and "a new app can be added without modifying shared infrastructure" (§40's last item) is a consistently-followed design rule (verified across every package's `package.json`) that has never actually been tested with a real second app, since this build only ever produced `app-one`.
 
 **Rollback:** N/A.
 
-**Exit criteria:** §40's full checklist has no unchecked, undocumented item; all 6 docs and 8 ADRs exist.
+**Exit criteria:** §40's full checklist has no unchecked, undocumented item — done, see `docs/final-architecture-audit.md` (33 PASS, 3 BLOCKED on user-provisioned EAS credentials, 2 PARTIAL, 1 NOT DONE — each with a reason, none silently skipped). All 6 docs (`README.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`, `DEVELOPMENT.md`, `DEPLOYMENT.md`, `SECURITY.md`) and 8 ADRs (`docs/adr/ADR-001` through `ADR-008`) exist.
 
 ---
 
