@@ -1,0 +1,39 @@
+{
+  "name": "@workspace/store",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.12.0",
+    "@workspace/api": "workspace:*",
+    "react-redux": "^9.3.0"
+  },
+  "peerDependencies": {
+    "axios": "^1.0.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.4.1",
+    "@types/react": "~19.2.2",
+    "@workspace/config": "workspace:*",
+    "axios": "^1.20.0",
+    "axios-mock-adapter": "^2.1.0",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "jest": "^30.5.1",
+    "jest-environment-jsdom": "^30.0.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "ts-jest": "^29.4.12",
+    "typescript": "~6.0.3"
+  }
+}

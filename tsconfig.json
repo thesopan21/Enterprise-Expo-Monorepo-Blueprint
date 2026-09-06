@@ -8,6 +8,7 @@
     { "path": "packages/auth" },
     { "path": "packages/api" },
     { "path": "packages/hooks" },
-    { "path": "packages/utils" }
+    { "path": "packages/utils" },
+    { "path": "packages/store" }
   ]
 }
