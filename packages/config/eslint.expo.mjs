@@ -18,6 +18,12 @@ export const expoOverlayConfig = [
     plugins: {
       onlyWarn,
     },
+    settings: {
+      "import/resolver": {
+        typescript: true,
+      },
+      "import/ignore": ["node_modules"],
+    },
     rules: {
       "import/order": [
         "warn",
@@ -27,6 +33,7 @@ export const expoOverlayConfig = [
           alphabetize: { order: "asc", caseInsensitive: true },
         },
       ],
+      "import/no-cycle": ["error", { ignoreExternal: true }],
     },
   },
   {

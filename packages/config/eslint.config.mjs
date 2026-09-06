@@ -21,6 +21,20 @@ export const baseConfig = [
     plugins: {
       onlyWarn,
     },
+    settings: {
+      // Without this, eslint-plugin-import can't correctly resolve
+      // TS/exports-map packages, which silently breaks import/no-cycle's
+      // external-module detection (it falls through to parsing raw
+      // node_modules sources, e.g. react-native's Flow-typed internals).
+      "import/resolver": {
+        typescript: true,
+      },
+      // Belt-and-braces: never attempt to parse into node_modules for
+      // export/cycle analysis — third-party RN packages ship Flow-typed
+      // sources our parser can't read, and we only care about cycles
+      // within our own workspace source anyway.
+      "import/ignore": ["node_modules"],
+    },
     rules: {
       "import/order": [
         "warn",
@@ -31,6 +45,7 @@ export const baseConfig = [
         },
       ],
       "import/no-unresolved": "off",
+      "import/no-cycle": ["error", { ignoreExternal: true }],
     },
   },
   {
