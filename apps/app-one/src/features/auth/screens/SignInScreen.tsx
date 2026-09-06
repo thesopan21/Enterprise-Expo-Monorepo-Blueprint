@@ -1,14 +1,14 @@
-import { theme } from '@workspace/theme';
-import { Button, Input, Typography } from '@workspace/ui';
-import { useState } from 'react';
-import { View } from 'react-native';
+import { theme } from "@workspace/theme";
+import { Button, Input, Typography } from "@workspace/ui";
+import { useState } from "react";
+import { View } from "react-native";
 
-import { useSignIn } from '../hooks/useSignIn';
-import type { SignInFormValues } from '../types';
-import { validateSignInForm, type SignInFormErrors } from '../validation';
+import { useSignIn } from "../hooks/useSignIn";
+import type { SignInFormValues } from "../types";
+import { validateSignInForm, type SignInFormErrors } from "../validation";
 
 export function SignInScreen() {
-  const [values, setValues] = useState<SignInFormValues>({ email: '', password: '' });
+  const [values, setValues] = useState<SignInFormValues>({ email: "", password: "" });
   const [errors, setErrors] = useState<SignInFormErrors>({});
   const signIn = useSignIn();
 
@@ -43,10 +43,15 @@ export function SignInScreen() {
       />
       {signIn.isError ? (
         <Typography variant="bodySmall" color={theme.colors.light.danger}>
-          {signIn.error instanceof Error ? signIn.error.message : 'Something went wrong.'}
+          {signIn.error instanceof Error ? signIn.error.message : "Something went wrong."}
         </Typography>
       ) : null}
-      <Button testID="sign-in-submit" label="Sign in" onPress={handleSubmit} loading={signIn.isPending} />
+      <Button
+        testID="sign-in-submit"
+        label="Sign in"
+        onPress={handleSubmit}
+        loading={signIn.isPending}
+      />
     </View>
   );
 }

@@ -1,17 +1,17 @@
-import { theme } from '@workspace/theme';
-import { Typography } from '@workspace/ui';
-import { Link, Stack } from 'expo-router';
-import { View } from 'react-native';
+import { theme } from "@workspace/theme";
+import { Typography } from "@workspace/ui";
+import { Link, Stack } from "expo-router";
+import { View } from "react-native";
 
 export default function NotFoundScreen() {
   return (
     <>
-      <Stack.Screen options={{ title: 'Not Found' }} />
+      <Stack.Screen options={{ title: "Not Found" }} />
       <View
         style={{
           flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
+          alignItems: "center",
+          justifyContent: "center",
           gap: theme.spacing[4],
         }}
       >

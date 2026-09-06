@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from "react";
 
 // Guards async state updates after unmount, e.g.:
 //   const isMounted = useIsMounted();

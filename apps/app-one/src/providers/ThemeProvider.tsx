@@ -1,5 +1,5 @@
-import { theme, type Theme } from '@workspace/theme';
-import { createContext, useContext, type PropsWithChildren } from 'react';
+import { theme, type Theme } from "@workspace/theme";
+import { createContext, useContext, type PropsWithChildren } from "react";
 
 // Pass-through for now — @workspace/ui's components reference theme.colors
 // directly rather than through context. This seam exists for future

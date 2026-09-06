@@ -459,13 +459,22 @@ apps/app-one/.maestro/login.yaml   (reference flow; repeat for additional apps i
 .github/workflows/release.yml
 ```
 
+**Files modified:**
+
+```
+package.json (root) — added a `format:check` script (`prettier --check`) alongside the
+existing write-mode `format` script, so CI can gate on formatting without mutating files.
+Running it surfaced 102 already-committed files that were never prettier-formatted;
+fixed via a one-time `pnpm format` before wiring the gate in.
+```
+
 **Dependencies added:** none (uses `eas-cli` via `npx`/`pnpm dlx` in CI, no repo dependency needed).
 
 **Validation:** Workflow YAML lint (`actionlint` or GitHub's own validator); a draft PR against this repo to confirm `pr.yml` actually runs and passes.
 
 **Tests:** N/A (infrastructure, validated by execution).
 
-**Known risks:** Requires secrets (`EXPO_TOKEN`, EAS project ID) that only the user/org can provision — this phase produces the workflow files, but activating EAS build/submit requires the user to create the EAS project and add secrets in GitHub, which I cannot do on their behalf.
+**Known risks:** Requires secrets (`EXPO_TOKEN`, EAS project ID) that only the user/org can provision — this phase produces the workflow files, but activating EAS build/submit requires the user to create the EAS project (`eas build:configure`, which generates `apps/app-one/eas.json` with build profiles — not created by this phase) and add the `EXPO_TOKEN` secret in GitHub, which I cannot do on their behalf. `main.yml`'s `eas-build` and `release.yml`'s `eas-release` jobs are gated behind `if: secrets.EXPO_TOKEN != ''` so the workflow stays green (job skipped, not failed) until that setup is done.
 
 **Rollback:** Workflows are additive; disabling is a one-line revert per file.
 

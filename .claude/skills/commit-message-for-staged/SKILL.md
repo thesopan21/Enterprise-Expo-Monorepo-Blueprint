@@ -21,8 +21,8 @@ Draft a commit message for whatever is currently staged (`git diff --staged`). T
    - Warn the user to rotate the credential and remove/redact it before committing, per org data-protection policy.
 4. Use the last ~10 subjects from `git log --oneline` to match the repo's existing style — short imperative subject line, sentence case, no conventional-commit prefixes (`feat:`, `fix:`, etc.) unless the log already uses them.
 5. Draft the message:
-   - **Subject**: imperative mood ("Add", "Fix", "Update", not "Added"/"Fixes"), ≤ 70 chars, no trailing period, states *what* changed.
-   - **Body** (only if the change isn't self-evident from the subject): 1-3 bullets/sentences on *why*, not a restatement of the diff line-by-line.
+   - **Subject**: imperative mood ("Add", "Fix", "Update", not "Added"/"Fixes"), ≤ 70 chars, no trailing period, states _what_ changed.
+   - **Body** (only if the change isn't self-evident from the subject): 1-3 bullets/sentences on _why_, not a restatement of the diff line-by-line.
    - If `$ARGUMENTS` is non-empty, treat it as extra context (ticket reference, reason) and fold it in naturally.
 6. Present the draft in a fenced code block, plus a one-line note on which files it covers.
 7. Ask whether the user wants it committed. Only run `git commit` if they explicitly confirm — never commit automatically. When you do commit, end the message with:

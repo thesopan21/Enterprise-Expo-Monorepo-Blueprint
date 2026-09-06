@@ -1,4 +1,4 @@
-const DEFAULT_LOCALE = 'en-IN';
+const DEFAULT_LOCALE = "en-IN";
 
 export function clamp(value: number, min: number, max: number): number {
   if (min > max) {

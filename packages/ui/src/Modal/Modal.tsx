@@ -1,14 +1,20 @@
-import { theme } from '@workspace/theme';
+import { theme } from "@workspace/theme";
 // Icon kept generic so this package doesn't hardcode a specific close-icon
 // choice; pass phosphor-react-native's `X` (or any Icon) via `closeIcon`.
-import type { Icon } from 'phosphor-react-native';
-import type { ReactNode } from 'react';
-import { Modal as RNModal, Pressable, StyleSheet, View, type ModalProps as RNModalProps } from 'react-native';
+import type { Icon } from "phosphor-react-native";
+import type { ReactNode } from "react";
+import {
+  Modal as RNModal,
+  Pressable,
+  StyleSheet,
+  View,
+  type ModalProps as RNModalProps,
+} from "react-native";
 
-import { IconButton } from '../IconButton/IconButton';
-import { Typography } from '../Typography/Typography';
+import { IconButton } from "../IconButton/IconButton";
+import { Typography } from "../Typography/Typography";
 
-export type ModalProps = Pick<RNModalProps, 'animationType' | 'testID'> & {
+export type ModalProps = Pick<RNModalProps, "animationType" | "testID"> & {
   visible: boolean;
   onClose: () => void;
   title?: string;
@@ -21,8 +27,8 @@ const colors = theme.colors.light;
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    justifyContent: "flex-end",
   },
   content: {
     backgroundColor: colors.background,
@@ -32,9 +38,9 @@ const styles = StyleSheet.create({
     gap: theme.spacing[3],
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 });
 
@@ -44,7 +50,7 @@ export function Modal({
   title,
   closeIcon,
   children,
-  animationType = 'slide',
+  animationType = "slide",
   testID,
 }: ModalProps) {
   return (
@@ -55,11 +61,7 @@ export function Modal({
       onRequestClose={onClose}
       testID={testID}
     >
-      <Pressable
-        accessibilityLabel="Close"
-        style={styles.backdrop}
-        onPress={onClose}
-      >
+      <Pressable accessibilityLabel="Close" style={styles.backdrop} onPress={onClose}>
         <Pressable
           accessibilityViewIsModal
           style={styles.content}
@@ -69,7 +71,12 @@ export function Modal({
             <View style={styles.header}>
               {title ? <Typography variant="h3">{title}</Typography> : <View />}
               {closeIcon ? (
-                <IconButton icon={closeIcon} accessibilityLabel="Close" size="sm" onPress={onClose} />
+                <IconButton
+                  icon={closeIcon}
+                  accessibilityLabel="Close"
+                  size="sm"
+                  onPress={onClose}
+                />
               ) : null}
             </View>
           ) : null}

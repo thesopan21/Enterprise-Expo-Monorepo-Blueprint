@@ -1,10 +1,10 @@
-import { theme } from '@workspace/theme';
-import type { Icon } from 'phosphor-react-native';
-import { Pressable, StyleSheet, type PressableProps } from 'react-native';
+import { theme } from "@workspace/theme";
+import type { Icon } from "phosphor-react-native";
+import { Pressable, StyleSheet, type PressableProps } from "react-native";
 
-export type IconButtonSize = 'sm' | 'md' | 'lg';
+export type IconButtonSize = "sm" | "md" | "lg";
 
-export type IconButtonProps = Omit<PressableProps, 'children' | 'style'> & {
+export type IconButtonProps = Omit<PressableProps, "children" | "style"> & {
   icon: Icon;
   accessibilityLabel: string;
   size?: IconButtonSize;
@@ -27,8 +27,8 @@ const iconSizes: Record<IconButtonSize, number> = {
 
 const styles = StyleSheet.create({
   base: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: theme.radius.full,
   },
   disabled: {
@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
 export function IconButton({
   icon: IconComponent,
   accessibilityLabel,
-  size = 'md',
+  size = "md",
   disabled = false,
   onPress,
   ...rest

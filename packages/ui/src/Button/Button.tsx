@@ -1,12 +1,12 @@
-import { theme } from '@workspace/theme';
-import { ActivityIndicator, Pressable, StyleSheet, type PressableProps } from 'react-native';
+import { theme } from "@workspace/theme";
+import { ActivityIndicator, Pressable, StyleSheet, type PressableProps } from "react-native";
 
-import { Typography } from '../Typography/Typography';
+import { Typography } from "../Typography/Typography";
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
+export type ButtonSize = "sm" | "md" | "lg";
 
-export type ButtonProps = Omit<PressableProps, 'children' | 'style'> & {
+export type ButtonProps = Omit<PressableProps, "children" | "style"> & {
   label: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -25,8 +25,8 @@ const sizeStyles = StyleSheet.create({
 const variantStyles = StyleSheet.create({
   primary: { backgroundColor: colors.primary, borderWidth: 0 },
   secondary: { backgroundColor: colors.surface, borderWidth: 0 },
-  outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
-  ghost: { backgroundColor: 'transparent', borderWidth: 0 },
+  outline: { backgroundColor: "transparent", borderWidth: 1, borderColor: colors.border },
+  ghost: { backgroundColor: "transparent", borderWidth: 0 },
   danger: { backgroundColor: colors.danger, borderWidth: 0 },
 });
 
@@ -40,9 +40,9 @@ const labelColors: Record<ButtonVariant, string> = {
 
 const styles = StyleSheet.create({
   base: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: theme.radius.md,
     gap: theme.spacing[2],
   },
@@ -53,8 +53,8 @@ const styles = StyleSheet.create({
 
 export function Button({
   label,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   loading = false,
   disabled = false,
   onPress,
@@ -69,12 +69,7 @@ export function Button({
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
       onPress={isDisabled ? undefined : onPress}
-      style={[
-        styles.base,
-        sizeStyles[size],
-        variantStyles[variant],
-        isDisabled && styles.disabled,
-      ]}
+      style={[styles.base, sizeStyles[size], variantStyles[variant], isDisabled && styles.disabled]}
       {...rest}
     >
       {loading ? (

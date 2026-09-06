@@ -1,10 +1,10 @@
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
 
-import { QueryProvider } from '@/providers/QueryProvider';
-import { SessionProvider, useSession } from '@/providers/SessionProvider';
-import { ThemeProvider } from '@/providers/ThemeProvider';
+import { QueryProvider } from "@/providers/QueryProvider";
+import { SessionProvider, useSession } from "@/providers/SessionProvider";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,7 +25,7 @@ function NavigationRouter() {
 
   useEffect(() => {
     if (!isLoading) {
-      SplashScreen.hideAsync().catch(() => { });
+      SplashScreen.hideAsync().catch(() => {});
     }
   }, [isLoading]);
 

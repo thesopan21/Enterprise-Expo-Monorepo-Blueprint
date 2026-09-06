@@ -1,5 +1,5 @@
-const DEFAULT_LOCALE = 'en-IN';
-const DEFAULT_CURRENCY = 'INR';
+const DEFAULT_LOCALE = "en-IN";
+const DEFAULT_CURRENCY = "INR";
 
 export function formatCurrency(
   amount: number,
@@ -9,5 +9,5 @@ export function formatCurrency(
   if (!Number.isFinite(amount)) {
     throw new RangeError(`formatCurrency: amount must be a finite number, got ${String(amount)}`);
   }
-  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
+  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(amount);
 }

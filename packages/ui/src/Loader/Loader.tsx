@@ -1,14 +1,14 @@
-import { theme } from '@workspace/theme';
-import { ActivityIndicator, type ActivityIndicatorProps } from 'react-native';
+import { theme } from "@workspace/theme";
+import { ActivityIndicator, type ActivityIndicatorProps } from "react-native";
 
-export type LoaderProps = Omit<ActivityIndicatorProps, 'accessibilityLabel'> & {
+export type LoaderProps = Omit<ActivityIndicatorProps, "accessibilityLabel"> & {
   accessibilityLabel?: string;
 };
 
 export function Loader({
-  size = 'small',
+  size = "small",
   color = theme.colors.light.primary,
-  accessibilityLabel = 'Loading',
+  accessibilityLabel = "Loading",
   ...rest
 }: LoaderProps) {
   return (

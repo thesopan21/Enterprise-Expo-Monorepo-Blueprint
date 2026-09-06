@@ -1,5 +1,5 @@
-import { sessionManager } from '@workspace/auth';
-import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react';
+import { sessionManager } from "@workspace/auth";
+import { createContext, useContext, useEffect, useState, type PropsWithChildren } from "react";
 
 interface SessionContextValue {
   isAuthenticated: boolean;
@@ -47,7 +47,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
 export function useSession(): SessionContextValue {
   const context = useContext(SessionContext);
   if (!context) {
-    throw new Error('useSession must be used within a SessionProvider');
+    throw new Error("useSession must be used within a SessionProvider");
   }
   return context;
 }

@@ -1,7 +1,7 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import type { AxiosInstance } from 'axios';
+import { createApi } from "@reduxjs/toolkit/query/react";
+import type { AxiosInstance } from "axios";
 
-import { axiosBaseQuery } from '../axiosBaseQuery';
+import { axiosBaseQuery } from "../axiosBaseQuery";
 
 export interface ExampleItem {
   id: string;
@@ -14,20 +14,20 @@ export interface ExampleItem {
 // causing an automatic refetch).
 export function createExampleApi(axiosInstance: AxiosInstance) {
   return createApi({
-    reducerPath: 'exampleApi',
+    reducerPath: "exampleApi",
     baseQuery: axiosBaseQuery(axiosInstance),
-    tagTypes: ['ExampleItem'],
+    tagTypes: ["ExampleItem"],
     endpoints: (builder) => ({
       getExampleItems: builder.query<ExampleItem[], void>({
-        query: () => ({ url: '/example-items' }),
+        query: () => ({ url: "/example-items" }),
         providesTags: (result) => [
-          ...(result ?? []).map(({ id }) => ({ type: 'ExampleItem' as const, id })),
-          { type: 'ExampleItem' as const, id: 'LIST' },
+          ...(result ?? []).map(({ id }) => ({ type: "ExampleItem" as const, id })),
+          { type: "ExampleItem" as const, id: "LIST" },
         ],
       }),
       createExampleItem: builder.mutation<ExampleItem, { name: string }>({
-        query: (body) => ({ url: '/example-items', method: 'POST', data: body }),
-        invalidatesTags: [{ type: 'ExampleItem', id: 'LIST' }],
+        query: (body) => ({ url: "/example-items", method: "POST", data: body }),
+        invalidatesTags: [{ type: "ExampleItem", id: "LIST" }],
       }),
     }),
   });

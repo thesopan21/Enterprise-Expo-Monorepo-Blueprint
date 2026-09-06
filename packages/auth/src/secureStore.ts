@@ -1,12 +1,12 @@
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from "expo-secure-store";
 
-import type { SecureStoreAdapter } from './types';
+import type { SecureStoreAdapter } from "./types";
 
 // Tokens are stored under separate keys (not a single combined blob) so
 // each stays well under SecureStore's ~2048-byte per-value limit on
 // Android (EncryptedSharedPreferences-backed).
-const ACCESS_TOKEN_KEY = 'workspace.auth.accessToken';
-const REFRESH_TOKEN_KEY = 'workspace.auth.refreshToken';
+const ACCESS_TOKEN_KEY = "workspace.auth.accessToken";
+const REFRESH_TOKEN_KEY = "workspace.auth.refreshToken";
 
 export const secureStore: SecureStoreAdapter = {
   async getAccessToken() {

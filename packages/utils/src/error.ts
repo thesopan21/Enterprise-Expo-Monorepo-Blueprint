@@ -3,7 +3,12 @@ export function isError(value: unknown): value is Error {
 }
 
 function hasStringProperty<K extends string>(value: unknown, key: K): value is Record<K, string> {
-  return typeof value === 'object' && value !== null && key in value && typeof (value as Record<K, unknown>)[key] === 'string';
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    key in value &&
+    typeof (value as Record<K, unknown>)[key] === "string"
+  );
 }
 
 // Best-effort human-readable message extraction from an unknown thrown
@@ -13,11 +18,11 @@ export function getErrorMessage(error: unknown): string {
   if (isError(error)) {
     return error.message;
   }
-  if (typeof error === 'string') {
+  if (typeof error === "string") {
     return error;
   }
-  if (hasStringProperty(error, 'message')) {
+  if (hasStringProperty(error, "message")) {
     return error.message;
   }
-  return 'An unknown error occurred.';
+  return "An unknown error occurred.";
 }

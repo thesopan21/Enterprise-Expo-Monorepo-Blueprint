@@ -1,9 +1,9 @@
-import { theme } from '@workspace/theme';
-import type { Icon } from 'phosphor-react-native';
-import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { theme } from "@workspace/theme";
+import type { Icon } from "phosphor-react-native";
+import type { ReactNode } from "react";
+import { StyleSheet, View } from "react-native";
 
-import { Typography } from '../Typography/Typography';
+import { Typography } from "../Typography/Typography";
 
 export type EmptyStateProps = {
   icon?: Icon;
@@ -16,8 +16,8 @@ const colors = theme.colors.light;
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: theme.spacing[2],
     padding: theme.spacing[6],
   },

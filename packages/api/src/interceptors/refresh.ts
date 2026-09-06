@@ -1,7 +1,7 @@
-import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
-import { ApiError, normalizeError } from '../errors';
-import type { ApiClientConfig } from '../types';
+import { ApiError, normalizeError } from "../errors";
+import type { ApiClientConfig } from "../types";
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
@@ -16,7 +16,7 @@ export function attachRefreshInterceptor(instance: AxiosInstance, config: ApiCli
   async function refreshAccessToken(): Promise<string> {
     const refreshToken = config.tokenProvider.getRefreshToken();
     if (!refreshToken) {
-      throw new Error('No refresh token available to refresh the session.');
+      throw new Error("No refresh token available to refresh the session.");
     }
     const session = await config.refreshAccessToken(refreshToken);
     await config.tokenProvider.setSession(session);
@@ -49,7 +49,7 @@ export function attachRefreshInterceptor(instance: AxiosInstance, config: ApiCli
         await config.tokenProvider.clearSession();
         config.onSessionExpired?.();
         return Promise.reject(
-          new ApiError('SESSION_EXPIRED', 'Your session has expired. Please sign in again.', {
+          new ApiError("SESSION_EXPIRED", "Your session has expired. Please sign in again.", {
             cause: refreshError,
           }),
         );
@@ -59,7 +59,7 @@ export function attachRefreshInterceptor(instance: AxiosInstance, config: ApiCli
       // token. If THIS fails, it's an unrelated error (e.g. a 500, or a
       // fresh 401 that `_retry` now prevents from looping), not a
       // session-expiry, so normalize it as whatever it actually is.
-      originalRequest.headers.set('Authorization', `Bearer ${accessToken}`);
+      originalRequest.headers.set("Authorization", `Bearer ${accessToken}`);
       try {
         return await instance(originalRequest);
       } catch (retryError) {

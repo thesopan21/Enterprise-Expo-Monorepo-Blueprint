@@ -8,7 +8,7 @@ type ShadowStyle = {
   elevation: number;
 };
 
-const shadowColor = '#000000';
+const shadowColor = "#000000";
 
 export const shadows = {
   none: {

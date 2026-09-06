@@ -1,4 +1,4 @@
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from "jwt-decode";
 
 // Decode-only — this never verifies a token's signature. The server is
 // the source of truth for validity; this is for reading claims client-side

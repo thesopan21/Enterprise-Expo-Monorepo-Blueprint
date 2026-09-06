@@ -19,10 +19,10 @@ vs. `@workspace/store`) owns server-state hooks in `src/features/*`.
 
 ```tsx
 // src/services/apiClient.ts already exists per Phase 10 — reuse it.
-import { createAppStore } from '@workspace/store';
-import { Provider } from 'react-redux';
+import { createAppStore } from "@workspace/store";
+import { Provider } from "react-redux";
 
-import { apiClient } from '@/services/apiClient';
+import { apiClient } from "@/services/apiClient";
 
 const { store } = createAppStore(apiClient);
 

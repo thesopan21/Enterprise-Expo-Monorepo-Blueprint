@@ -1,4 +1,4 @@
-import type { Storage } from './types';
+import type { Storage } from "./types";
 
 // Non-persistent, in-process only — data is lost on restart and is never
 // shared across app instances. For Jest/unit tests only; never use this as

@@ -12,20 +12,20 @@ Do not optimize only for "getting the app running."
 
 Optimize for:
 
-* Long-term maintainability
-* Developer experience
-* Type safety
-* Dependency stability
-* Native compatibility
-* Expo compatibility
-* Build reproducibility
-* CI/CD reliability
-* Scalability
-* Security
-* Testing
-* Clear package boundaries
-* Minimal architectural coupling
-* Easy onboarding of new applications
+- Long-term maintainability
+- Developer experience
+- Type safety
+- Dependency stability
+- Native compatibility
+- Expo compatibility
+- Build reproducibility
+- CI/CD reliability
+- Scalability
+- Security
+- Testing
+- Clear package boundaries
+- Minimal architectural coupling
+- Easy onboarding of new applications
 
 ---
 
@@ -92,11 +92,11 @@ Turborepo
 
 for:
 
-* Task orchestration
-* Dependency-aware execution
-* Build caching
-* CI optimization
-* Remote caching support
+- Task orchestration
+- Dependency-aware execution
+- Build caching
+- CI optimization
+- Remote caching support
 
 ## Mobile
 
@@ -178,13 +178,13 @@ Use proper package exports.
 Applications must import:
 
 ```ts
-import { Button } from '@workspace/ui';
+import { Button } from "@workspace/ui";
 ```
 
 Never:
 
 ```ts
-import { Button } from '../../../packages/ui/src/Button';
+import { Button } from "../../../packages/ui/src/Button";
 ```
 
 Never rely on TypeScript path aliases as a replacement for workspace packages.
@@ -197,17 +197,17 @@ Never rely on TypeScript path aliases as a replacement for workspace packages.
 
 Responsible for:
 
-* Axios HTTP client
-* Base URL configuration
-* Request interceptors
-* Response interceptors
-* Authorization headers
-* JWT refresh handling
-* Concurrent refresh protection
-* API error normalization
-* Request timeout
-* Network error handling
-* Typed API infrastructure
+- Axios HTTP client
+- Base URL configuration
+- Request interceptors
+- Response interceptors
+- Authorization headers
+- JWT refresh handling
+- Concurrent refresh protection
+- API error normalization
+- Request timeout
+- Network error handling
+- Typed API infrastructure
 
 Do not place application-specific API endpoints here unless they are genuinely shared.
 
@@ -225,14 +225,14 @@ Use dependency inversion/interfaces where required.
 
 Responsible for:
 
-* Authentication session
-* JWT decoding
-* Access token handling
-* Refresh token handling
-* SecureStore abstraction
-* Login/logout session lifecycle
-* Token persistence
-* Session restoration
+- Authentication session
+- JWT decoding
+- Access token handling
+- Refresh token handling
+- SecureStore abstraction
+- Login/logout session lifecycle
+- Token persistence
+- Session restoration
 
 Never store sensitive authentication credentials in ordinary MMKV.
 
@@ -258,11 +258,11 @@ react-native-mmkv
 
 Use MMKV for:
 
-* Preferences
-* Lightweight persistent state
-* Feature flags
-* Local primitive data
-* Non-sensitive application data
+- Preferences
+- Lightweight persistent state
+- Feature flags
+- Local primitive data
+- Non-sensitive application data
 
 Implement a safe development/test fallback.
 
@@ -365,13 +365,13 @@ BottomSheet abstraction if required
 
 Components must:
 
-* Be strongly typed
-* Support accessibility
-* Support disabled/loading states where appropriate
-* Use shared theme tokens
-* Avoid business logic
-* Avoid API dependencies
-* Avoid application-specific behavior
+- Be strongly typed
+- Support accessibility
+- Support disabled/loading states where appropriate
+- Use shared theme tokens
+- Avoid business logic
+- Avoid API dependencies
+- Avoid application-specific behavior
 
 The UI package must remain reusable across all applications.
 
@@ -621,12 +621,12 @@ TanStack Query
 
 for:
 
-* API data
-* caching
-* mutations
-* invalidation
-* retries
-* synchronization
+- API data
+- caching
+- mutations
+- invalidation
+- retries
+- synchronization
 
 ## Authentication state
 
@@ -779,18 +779,18 @@ Do not implement offline sync unless explicitly required, but provide an archite
 
 Audit:
 
-* Token storage
-* Logging
-* Error reporting
-* Environment variables
-* API keys
-* Secrets
-* Deep links
-* URL schemes
-* Debug logs
-* Sensitive analytics
-* Clipboard usage
-* Screenshots if sensitive screens exist
+- Token storage
+- Logging
+- Error reporting
+- Environment variables
+- API keys
+- Secrets
+- Deep links
+- URL schemes
+- Debug logs
+- Sensitive analytics
+- Clipboard usage
+- Screenshots if sensitive screens exist
 
 Never log:
 
@@ -1064,20 +1064,20 @@ SECURITY.md
 
 Document:
 
-* Repository structure
-* Package responsibilities
-* Dependency rules
-* Development setup
-* Native development
-* Expo prebuild
-* EAS
-* CI/CD
-* Environment variables
-* Release process
-* Troubleshooting
-* Common Metro issues
-* Common pnpm issues
-* Native dependency issues
+- Repository structure
+- Package responsibilities
+- Dependency rules
+- Development setup
+- Native development
+- Expo prebuild
+- EAS
+- CI/CD
+- Environment variables
+- Release process
+- Troubleshooting
+- Common Metro issues
+- Common pnpm issues
+- Native dependency issues
 
 ---
 
@@ -1143,18 +1143,18 @@ Use this implementation sequence.
 
 Before touching files:
 
-* Verify latest compatible versions.
-* Verify Expo SDK.
-* Verify Node.
-* Verify pnpm.
-* Verify Turborepo.
-* Verify React Native.
-* Verify native package compatibility.
-* Identify risks.
-* Identify conflicts.
-* Produce dependency matrix.
-* Produce architecture diagram.
-* Produce package dependency graph.
+- Verify latest compatible versions.
+- Verify Expo SDK.
+- Verify Node.
+- Verify pnpm.
+- Verify Turborepo.
+- Verify React Native.
+- Verify native package compatibility.
+- Identify risks.
+- Identify conflicts.
+- Produce dependency matrix.
+- Produce architecture diagram.
+- Produce package dependency graph.
 
 Do not implement yet.
 

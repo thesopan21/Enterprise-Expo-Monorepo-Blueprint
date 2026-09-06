@@ -1,15 +1,15 @@
-import { theme } from '@workspace/theme';
-import { StyleSheet, Text, type TextProps } from 'react-native';
+import { theme } from "@workspace/theme";
+import { StyleSheet, Text, type TextProps } from "react-native";
 
 export type TypographyVariant =
-  | 'display'
-  | 'h1'
-  | 'h2'
-  | 'h3'
-  | 'body'
-  | 'bodySmall'
-  | 'caption'
-  | 'label';
+  | "display"
+  | "h1"
+  | "h2"
+  | "h3"
+  | "body"
+  | "bodySmall"
+  | "caption"
+  | "label";
 
 export type TypographyProps = TextProps & {
   variant?: TypographyVariant;
@@ -25,18 +25,18 @@ const baseStyle = StyleSheet.create({
 const variantStyles = StyleSheet.create({
   display: {
     fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize['4xl'],
-    lineHeight: theme.lineHeight['4xl'],
+    fontSize: theme.fontSize["4xl"],
+    lineHeight: theme.lineHeight["4xl"],
   },
   h1: {
     fontFamily: theme.fontFamily.bold,
-    fontSize: theme.fontSize['3xl'],
-    lineHeight: theme.lineHeight['3xl'],
+    fontSize: theme.fontSize["3xl"],
+    lineHeight: theme.lineHeight["3xl"],
   },
   h2: {
     fontFamily: theme.fontFamily.semiBold,
-    fontSize: theme.fontSize['2xl'],
-    lineHeight: theme.lineHeight['2xl'],
+    fontSize: theme.fontSize["2xl"],
+    lineHeight: theme.lineHeight["2xl"],
   },
   h3: {
     fontFamily: theme.fontFamily.semiBold,
@@ -65,7 +65,7 @@ const variantStyles = StyleSheet.create({
   },
 });
 
-export function Typography({ variant = 'body', color, style, ...rest }: TypographyProps) {
+export function Typography({ variant = "body", color, style, ...rest }: TypographyProps) {
   return (
     <Text
       style={[baseStyle.text, variantStyles[variant], color ? { color } : undefined, style]}

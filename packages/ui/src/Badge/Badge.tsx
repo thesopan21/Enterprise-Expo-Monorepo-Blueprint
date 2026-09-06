@@ -1,9 +1,9 @@
-import { palette, theme } from '@workspace/theme';
-import { StyleSheet, View, type ViewProps } from 'react-native';
+import { palette, theme } from "@workspace/theme";
+import { StyleSheet, View, type ViewProps } from "react-native";
 
-import { Typography } from '../Typography/Typography';
+import { Typography } from "../Typography/Typography";
 
-export type BadgeVariant = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
+export type BadgeVariant = "neutral" | "success" | "warning" | "danger" | "info";
 
 export type BadgeProps = ViewProps & {
   label: string;
@@ -28,20 +28,16 @@ const labelColors: Record<BadgeVariant, string> = {
 
 const styles = StyleSheet.create({
   badge: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     borderRadius: theme.radius.full,
     paddingVertical: theme.spacing[1],
     paddingHorizontal: theme.spacing[2],
   },
 });
 
-export function Badge({ label, variant = 'neutral', style, ...rest }: BadgeProps) {
+export function Badge({ label, variant = "neutral", style, ...rest }: BadgeProps) {
   return (
-    <View
-      accessibilityRole="text"
-      style={[styles.badge, variantStyles[variant], style]}
-      {...rest}
-    >
+    <View accessibilityRole="text" style={[styles.badge, variantStyles[variant], style]} {...rest}>
       <Typography variant="caption" color={labelColors[variant]}>
         {label}
       </Typography>

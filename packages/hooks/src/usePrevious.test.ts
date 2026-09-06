@@ -1,25 +1,28 @@
-import { renderHook } from '@testing-library/react-native';
+import { renderHook } from "@testing-library/react-native";
 
-import { usePrevious } from './usePrevious';
+import { usePrevious } from "./usePrevious";
 
-describe('usePrevious', () => {
-  it('returns undefined on the first render', async () => {
+describe("usePrevious", () => {
+  it("returns undefined on the first render", async () => {
     const { result } = await renderHook(({ value }: { value: string }) => usePrevious(value), {
-      initialProps: { value: 'a' },
+      initialProps: { value: "a" },
     });
 
     expect(result.current).toBeUndefined();
   });
 
-  it('returns the previous value after each rerender', async () => {
-    const { result, rerender } = await renderHook(({ value }: { value: string }) => usePrevious(value), {
-      initialProps: { value: 'a' },
-    });
+  it("returns the previous value after each rerender", async () => {
+    const { result, rerender } = await renderHook(
+      ({ value }: { value: string }) => usePrevious(value),
+      {
+        initialProps: { value: "a" },
+      },
+    );
 
-    await rerender({ value: 'b' });
-    expect(result.current).toBe('a');
+    await rerender({ value: "b" });
+    expect(result.current).toBe("a");
 
-    await rerender({ value: 'c' });
-    expect(result.current).toBe('b');
+    await rerender({ value: "c" });
+    expect(result.current).toBe("b");
   });
 });

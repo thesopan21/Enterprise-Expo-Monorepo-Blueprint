@@ -1,0 +1,77 @@
+name: Main Build
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: main-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Expo Doctor (app-one)
+        working-directory: apps/app-one
+        run: npx expo-doctor
+
+  check-eas-token:
+    runs-on: ubuntu-latest
+    outputs:
+      has-token: ${{ steps.check.outputs.has-token }}
+    steps:
+      - id: check
+        run: echo "has-token=${{ secrets.EXPO_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+
+  eas-build:
+    needs: [validate, check-eas-token]
+    runs-on: ubuntu-latest
+    # Requires a user-provisioned EAS project (`eas build:configure`, which
+    # creates apps/app-one/eas.json with build profiles) and an EXPO_TOKEN
+    # repo secret — neither can be created on the user's behalf. Until both
+    # exist this job is skipped rather than failing the workflow. (A job-level
+    # `if` can't reference `secrets` directly, hence the check-eas-token job.)
+    if: ${{ needs.check-eas-token.outputs.has-token == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: EAS Build (preview profile, all platforms)
+        working-directory: apps/app-one
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas-cli build --platform all --profile preview --non-interactive --no-wait

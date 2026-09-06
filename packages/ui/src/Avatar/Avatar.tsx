@@ -1,10 +1,10 @@
-import { palette } from '@workspace/theme';
-import type { Icon } from 'phosphor-react-native';
-import { Image, StyleSheet, View, type ImageSourcePropType } from 'react-native';
+import { palette } from "@workspace/theme";
+import type { Icon } from "phosphor-react-native";
+import { Image, StyleSheet, View, type ImageSourcePropType } from "react-native";
 
-import { Typography } from '../Typography/Typography';
+import { Typography } from "../Typography/Typography";
 
-export type AvatarSize = 'sm' | 'md' | 'lg';
+export type AvatarSize = "sm" | "md" | "lg";
 
 export type AvatarProps = {
   label: string;
@@ -27,20 +27,20 @@ const iconSizes: Record<AvatarSize, number> = {
 
 const styles = StyleSheet.create({
   base: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: palette.brand[100],
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 });
 
 function initialsFrom(label: string) {
   const parts = label.trim().split(/\s+/).filter(Boolean);
-  const initials = parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '');
-  return initials.join('') || '?';
+  const initials = parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "");
+  return initials.join("") || "?";
 }
 
-export function Avatar({ label, source, icon: IconComponent, size = 'md' }: AvatarProps) {
+export function Avatar({ label, source, icon: IconComponent, size = "md" }: AvatarProps) {
   const dimension = dimensions[size];
   const containerStyle = [
     styles.base,

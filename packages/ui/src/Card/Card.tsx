@@ -1,5 +1,5 @@
-import { theme } from '@workspace/theme';
-import { StyleSheet, View, type ViewProps } from 'react-native';
+import { theme } from "@workspace/theme";
+import { StyleSheet, View, type ViewProps } from "react-native";
 
 export type CardProps = ViewProps;
 

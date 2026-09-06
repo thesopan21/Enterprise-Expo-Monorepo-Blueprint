@@ -1,10 +1,10 @@
-import { theme } from '@workspace/theme';
-import { useId, useState } from 'react';
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { theme } from "@workspace/theme";
+import { useId, useState } from "react";
+import { StyleSheet, TextInput, View, type TextInputProps } from "react-native";
 
-import { Typography } from '../Typography/Typography';
+import { Typography } from "../Typography/Typography";
 
-export type InputProps = Omit<TextInputProps, 'style'> & {
+export type InputProps = Omit<TextInputProps, "style"> & {
   label?: string;
   error?: string;
   disabled?: boolean;

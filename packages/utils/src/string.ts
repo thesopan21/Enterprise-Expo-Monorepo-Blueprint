@@ -5,7 +5,7 @@ export function capitalize(value: string): string {
   return value[0]!.toUpperCase() + value.slice(1);
 }
 
-export function truncate(value: string, maxLength: number, suffix = '…'): string {
+export function truncate(value: string, maxLength: number, suffix = "…"): string {
   if (value.length <= maxLength) {
     return value;
   }
@@ -19,8 +19,8 @@ export function slugify(value: string): string {
   return value
     .trim()
     .toLowerCase()
-    .normalize('NFKD')
-    .replace(/\p{M}/gu, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }

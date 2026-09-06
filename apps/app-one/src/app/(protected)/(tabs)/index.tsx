@@ -1,8 +1,8 @@
-import { theme } from '@workspace/theme';
-import { Button, Typography } from '@workspace/ui';
-import { StyleSheet, View } from 'react-native';
+import { theme } from "@workspace/theme";
+import { Button, Typography } from "@workspace/ui";
+import { StyleSheet, View } from "react-native";
 
-import { useSession } from '@/providers/SessionProvider';
+import { useSession } from "@/providers/SessionProvider";
 
 export default function HomeScreen() {
   const { signOut } = useSession();
@@ -18,8 +18,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: theme.spacing[4],
   },
 });

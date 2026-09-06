@@ -1,4 +1,4 @@
-import type { Session, TokenProvider } from '@workspace/auth';
+import type { Session, TokenProvider } from "@workspace/auth";
 
 export interface ApiClientConfig {
   baseURL: string;

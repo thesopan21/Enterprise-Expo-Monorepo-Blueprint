@@ -1,4 +1,4 @@
-import type { SecureStoreAdapter, Session, SessionListener, SessionManager } from './types';
+import type { SecureStoreAdapter, Session, SessionListener, SessionManager } from "./types";
 
 // getAccessToken/getRefreshToken read from an in-memory cache (not
 // SecureStore directly) so they can be synchronous — @workspace/api's

@@ -1,8 +1,8 @@
-import { configureStore, type Reducer } from '@reduxjs/toolkit';
-import { setupListeners } from '@reduxjs/toolkit/query';
-import type { AxiosInstance } from 'axios';
+import { configureStore, type Reducer } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
+import type { AxiosInstance } from "axios";
 
-import { createExampleApi } from './api/exampleApi';
+import { createExampleApi } from "./api/exampleApi";
 
 // Template store setup — a reference, not a fixed dependency. Replace
 // `exampleApi` with your own createApi() slice(s); add each one's
@@ -16,7 +16,7 @@ export function createAppStore(axiosInstance: AxiosInstance) {
       [exampleApi.reducerPath]: exampleApi.reducer as Reducer,
     },
     middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(exampleApi.middleware),
-    devTools: process.env.NODE_ENV !== 'production',
+    devTools: process.env.NODE_ENV !== "production",
   });
 
   setupListeners(store.dispatch);
@@ -24,6 +24,6 @@ export function createAppStore(axiosInstance: AxiosInstance) {
   return { store, exampleApi };
 }
 
-export type AppStore = ReturnType<typeof createAppStore>['store'];
-export type RootState = ReturnType<AppStore['getState']>;
-export type AppDispatch = AppStore['dispatch'];
+export type AppStore = ReturnType<typeof createAppStore>["store"];
+export type RootState = ReturnType<AppStore["getState"]>;
+export type AppDispatch = AppStore["dispatch"];

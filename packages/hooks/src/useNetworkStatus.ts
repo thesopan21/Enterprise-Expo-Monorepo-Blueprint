@@ -1,4 +1,4 @@
-import { useNetInfo } from '@react-native-community/netinfo';
+import { useNetInfo } from "@react-native-community/netinfo";
 
 export interface NetworkStatus {
   isConnected: boolean;

@@ -1,13 +1,13 @@
-import { act, renderHook } from '@testing-library/react-native';
-import { Keyboard, type KeyboardEventListener, type KeyboardEventName } from 'react-native';
+import { act, renderHook } from "@testing-library/react-native";
+import { Keyboard, type KeyboardEventListener, type KeyboardEventName } from "react-native";
 
-import { useKeyboard } from './useKeyboard';
+import { useKeyboard } from "./useKeyboard";
 
 function mockKeyboardListeners() {
   const listeners = new Map<KeyboardEventName, KeyboardEventListener>();
   const removeMocks = new Map<KeyboardEventName, jest.Mock>();
 
-  jest.spyOn(Keyboard, 'addListener').mockImplementation(((
+  jest.spyOn(Keyboard, "addListener").mockImplementation(((
     eventName: KeyboardEventName,
     listener: KeyboardEventListener,
   ) => {
@@ -27,12 +27,12 @@ function mockKeyboardListeners() {
   };
 }
 
-describe('useKeyboard', () => {
+describe("useKeyboard", () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  it('starts hidden', async () => {
+  it("starts hidden", async () => {
     mockKeyboardListeners();
 
     const { result } = await renderHook(() => useKeyboard());
@@ -40,32 +40,36 @@ describe('useKeyboard', () => {
     expect(result.current).toEqual({ isVisible: false, height: 0 });
   });
 
-  it('reports visible with height when the keyboard shows', async () => {
+  it("reports visible with height when the keyboard shows", async () => {
     const { emit } = mockKeyboardListeners();
 
     const { result } = await renderHook(() => useKeyboard());
-    await emit('keyboardDidShow', { endCoordinates: { height: 300, screenX: 0, screenY: 0, width: 0 } });
+    await emit("keyboardDidShow", {
+      endCoordinates: { height: 300, screenX: 0, screenY: 0, width: 0 },
+    });
 
     expect(result.current).toEqual({ isVisible: true, height: 300 });
   });
 
-  it('reports hidden with zero height when the keyboard hides', async () => {
+  it("reports hidden with zero height when the keyboard hides", async () => {
     const { emit } = mockKeyboardListeners();
 
     const { result } = await renderHook(() => useKeyboard());
-    await emit('keyboardDidShow', { endCoordinates: { height: 300, screenX: 0, screenY: 0, width: 0 } });
-    await emit('keyboardDidHide', {});
+    await emit("keyboardDidShow", {
+      endCoordinates: { height: 300, screenX: 0, screenY: 0, width: 0 },
+    });
+    await emit("keyboardDidHide", {});
 
     expect(result.current).toEqual({ isVisible: false, height: 0 });
   });
 
-  it('removes both listeners on unmount', async () => {
+  it("removes both listeners on unmount", async () => {
     const { removeMockFor } = mockKeyboardListeners();
 
     const { unmount } = await renderHook(() => useKeyboard());
     await unmount();
 
-    expect(removeMockFor('keyboardDidShow')).toHaveBeenCalledTimes(1);
-    expect(removeMockFor('keyboardDidHide')).toHaveBeenCalledTimes(1);
+    expect(removeMockFor("keyboardDidShow")).toHaveBeenCalledTimes(1);
+    expect(removeMockFor("keyboardDidHide")).toHaveBeenCalledTimes(1);
   });
 });
