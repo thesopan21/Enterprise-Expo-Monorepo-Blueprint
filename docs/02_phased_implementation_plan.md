@@ -597,26 +597,33 @@ packages/analytics/README.md                  (vendor wiring guide; explicit "do
 
 ```
 packages/notifications/package.json
+packages/notifications/tsconfig.json
+packages/notifications/jest.config.cjs
+packages/notifications/eslint.config.mjs
 packages/notifications/src/index.ts
 packages/notifications/src/permissions.ts
+packages/notifications/src/permissions.test.ts
 packages/notifications/src/registerPushToken.ts
+packages/notifications/src/registerPushToken.test.ts
 packages/notifications/src/useNotificationListener.ts
+packages/notifications/src/useNotificationListener.test.ts
 packages/notifications/src/useNotificationResponseListener.ts
+packages/notifications/src/useNotificationResponseListener.test.ts
 packages/notifications/src/types.ts
 packages/notifications/README.md              (Expo Go vs. Development Build constraints; explicitly scopes this as client-side only — no push-sending backend included)
 ```
 
-**Dependencies added:** `expo-notifications`.
+**Dependencies added:** `expo-notifications` (`~57.0.17`, version confirmed via a throwaway `expo install` in app-one, then reverted — same discovery technique as Phase 15's `expo-updates`).
 
-**Validation:** `pnpm --filter @workspace/notifications typecheck`; real push token registration can only be meaningfully proven on a Development Build or physical device (Phase 12), so this phase's own validation is limited to typecheck plus a mocked-permission unit test — the same honesty precedent Phases 6 and 7 set for MMKV and SecureStore.
+**Validation:** `pnpm --filter @workspace/notifications typecheck`/`lint`/`test` all pass — confirmed the actual `expo-notifications` v57 type definitions (`PermissionStatus` enum, `Notification`/`NotificationResponse` shapes, `EventSubscription.remove()`) against the exact SDK 57 docs per `apps/app-one/AGENTS.md`, rather than assuming an older API shape. Real push token registration can only be meaningfully proven on a Development Build or physical device (Phase 12), so beyond typecheck/lint/test this phase's validation is limited to mocked unit tests — the same honesty precedent Phases 6 and 7 set for MMKV and SecureStore.
 
-**Tests:** Unit tests for permission-status mapping and token-registration error handling, using a mocked `expo-notifications` module (interface contract only).
+**Tests:** Unit tests for permission-status mapping (all three `PermissionStatus` values plus an unrecognized-value fallback) and token-registration error handling (permission-denied short-circuits before calling `getExpoPushTokenAsync`; a token-fetch failure is wrapped in a clear, actionable error), all using a mocked `expo-notifications` module. Also added tests for both listener hooks (handler receives the notification's `data` payload; subscription is removed on unmount) — not explicitly required by this phase's original scope, but cheap given the precedent set by Phase 16's `useScreenTracking` test and caught one real bug: the first draft of `registerPushToken.test.ts` leaked mock call counts across test cases (no `afterEach(jest.clearAllMocks)`), causing a false failure on the "permission not granted" case. 13 tests total, all passing, 100% coverage.
 
-**Known risks:** Real push delivery needs backend infrastructure (a server calling Expo's push API or FCM/APNs directly) that doesn't exist in this blueprint — this package covers registration and receiving only, not sending; the README must state this boundary explicitly so it's never mistaken for a complete solution. Meaningful testing requires a Development Build, the same Phase 12 dependency Phases 6/7 already carry.
+**Known risks:** Real push delivery needs backend infrastructure (a server calling Expo's push API or FCM/APNs directly) that doesn't exist in this blueprint — this package covers registration and receiving only, not sending; the README states this boundary explicitly. Meaningful testing requires a Development Build, the same Phase 12 dependency Phases 6/7 already carry. `registerForPushNotifications()` will fail with app.json's current `REPLACE_WITH_EAS_PROJECT_ID` placeholder (Phase 15) until a real EAS project exists — documented in the README, not silently left as a mystery failure.
 
 **Rollback:** Delete `packages/notifications`; no other phase has a hard dependency on it.
 
-**Exit criteria:** Permission/registration/listener helpers typed and unit-tested (mocked); README explicitly scopes what this package does and does not cover; package typechecks/lints clean.
+**Exit criteria:** All met — permission/registration/listener helpers typed and unit-tested (mocked); README explicitly scopes what this package does and does not cover, documents Expo Go/Development Build constraints, the required app-level config-plugin setup, and that foreground presentation behavior (`setNotificationHandler`) is deliberately left to the consuming app; package typechecks/lints/tests clean.
 
 ---
 
