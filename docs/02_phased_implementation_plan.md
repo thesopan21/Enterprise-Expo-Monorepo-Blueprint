@@ -498,22 +498,35 @@ fixed via a one-time `pnpm format` before wiring the gate in.
 **Files created/modified:**
 
 ```
-apps/app-one/app.json          (add "updates", "runtimeVersion" fields)
-.github/workflows/main.yml     (modified — add an eas update publish step)
+apps/app-one/app.json          (add "updates", "runtimeVersion", "extra.eas.projectId" fields —
+                                 the latter two hold a REPLACE_WITH_EAS_PROJECT_ID placeholder
+                                 pending the user's `eas init`)
+apps/app-one/eas.json           (new — build profiles for development/preview/production, each
+                                 mapped to an update channel of the same name)
+.github/workflows/main.disable  (renamed from main.yml pre-Phase-15, commit 09cb119 — modified,
+                                 added an `eas update --channel preview` publish step)
+.github/workflows/release.disable (renamed from release.yml pre-Phase-15 — modified, added an
+                                 `eas update --channel production` publish step)
 docs/ota-updates.md            (channel/branch strategy, rollback procedure, runtimeVersion policy rationale)
 ```
 
-**Dependencies added:** `expo-updates`.
+**Dependencies added:** `expo-updates` (`~57.0.21`, via `expo install` for SDK-57 compatibility).
 
-**Validation:** `expo-doctor` (already part of Phase 14's `pr.yml` gate) passes with `expo-updates` configured; a Development/production build from Phase 12 actually receives a published test update — the only real proof, and it needs a build installed on a device/simulator plus a real `eas update` publish, the same user-provisioned EAS project dependency Phase 14 already flagged.
+**Decisions made (see `docs/ota-updates.md` for full rationale):**
 
-**Tests:** N/A — native/EAS configuration, not meaningfully unit-testable; validated by the on-device update check in Validation.
+- `runtimeVersion` policy: **`fingerprint`**, not `appVersion` — avoids the silent-mismatch failure mode that comes from relying on a human to bump `expo.version` on every native-affecting change.
+- In-app update check: rely on the default `checkAutomatically: "ON_LOAD"` rather than adding a custom foreground-triggered check — documented as a deliberate choice, not an oversight.
+- Publish flag: `eas update --channel <name> --environment <name>` rather than `--branch <name>` as originally sketched above — current EAS CLI docs (checked against the exact SDK 57 docs per `apps/app-one/AGENTS.md`) recommend channel-based publishing over targeting a branch directly, and `--environment` is required as of SDK 55+.
 
-**Known risks:** A `runtimeVersion` mismatch between a build and a published update is a common, silent failure mode (the update is simply never offered) — document the exact policy chosen and why. OTA updates can only ship JS/asset changes; any native module or config-plugin change still requires a full rebuild through Phases 12/14, not an OTA update — state this boundary explicitly so it's never mistaken for a way to skip app-store review universally. Requires the same user-provisioned EAS project/`EXPO_TOKEN` as Phase 14.
+**Validation:** `expo-doctor` (already part of Phase 14's `pr.yml` gate) passes with `expo-updates` configured — confirmed: 20/21 checks pass, and the one failure (patch-version drift across several unrelated `expo-*` packages plus a `jest`/`@types/jest` major-version mismatch) predates this phase and isn't caused by `expo-updates`. `pnpm typecheck`/`lint`/`test`/`format:check` all pass. A Development/production build from Phase 12 actually receiving a published test update is still the only real end-to-end proof, and it needs a build installed on a device/simulator plus a real `eas update` publish — the same user-provisioned EAS project dependency Phase 14 already flagged, not yet available.
+
+**Tests:** N/A — native/EAS configuration, not meaningfully unit-testable; validated by `expo-doctor` and (once an EAS project exists) the on-device update check in Validation.
+
+**Known risks:** A `runtimeVersion` mismatch between a build and a published update is a common, silent failure mode (the update is simply never offered) — the `fingerprint` policy narrows this but doesn't eliminate it (see `docs/ota-updates.md`). OTA updates can only ship JS/asset changes; any native module or config-plugin change still requires a full rebuild through Phases 12/14, not an OTA update — state this boundary explicitly so it's never mistaken for a way to skip app-store review universally. Requires the same user-provisioned EAS project/`EXPO_TOKEN` as Phase 14; `app.json`'s `extra.eas.projectId`/`updates.url` are placeholders until `eas init` is run. Also unresolved, pre-existing, and out of this phase's scope: `expo-doctor`'s patch-version-drift and `jest` major-version-mismatch findings (see Validation) — worth a dedicated dependency-alignment pass, not bundled into this phase to avoid scope creep.
 
 **Rollback:** Publish a previous known-good update (or `eas update:rollback`) to the affected channel; disabling `expo-updates` entirely reverts to store-review-only releases — an isolated, additive-only removal.
 
-**Exit criteria:** `app.json`'s `updates`/`runtimeVersion` fields configured and documented; at least one test update successfully received on a Development Build; CI has a gated `eas update` publish step; `docs/ota-updates.md` documents the channel strategy and rollback procedure.
+**Exit criteria:** `app.json`'s `updates`/`runtimeVersion` fields configured and documented — done. `docs/ota-updates.md` documents the channel strategy and rollback procedure — done. CI has a gated `eas update` publish step — done (`main.disable`/`release.disable`, pending rename back to `.yml` once EAS is provisioned). At least one test update successfully received on a Development Build — **not yet met**, blocked on the user provisioning an EAS project; this is the one exit criterion Phase 15 cannot close out on its own.
 
 ---
 

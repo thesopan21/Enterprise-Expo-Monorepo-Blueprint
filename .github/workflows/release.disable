@@ -48,12 +48,13 @@ jobs:
   eas-release:
     needs: [validate, check-eas-token]
     runs-on: ubuntu-latest
-    # Requires a user-provisioned EAS project (`eas build:configure`, which
-    # creates apps/app-one/eas.json with build profiles), an EXPO_TOKEN repo
-    # secret, and app store/Play Console credentials configured for `eas
-    # submit` — none of which can be created on the user's behalf. Until all
-    # of that exists this job is skipped rather than failing the workflow. (A
-    # job-level `if` can't reference `secrets` directly, hence check-eas-token.)
+    # Requires a user-provisioned EAS project (`eas init`, which populates
+    # app.json's extra.eas.projectId — currently a REPLACE_WITH_EAS_PROJECT_ID
+    # placeholder), an EXPO_TOKEN repo secret, and app store/Play Console
+    # credentials configured for `eas submit` — none of which can be created
+    # on the user's behalf. Until all of that exists this job is skipped
+    # rather than failing the workflow. (A job-level `if` can't reference
+    # `secrets` directly, hence check-eas-token.)
     if: ${{ needs.check-eas-token.outputs.has-token == 'true' }}
     steps:
       - uses: actions/checkout@v4
@@ -73,3 +74,9 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: npx eas-cli build --platform all --profile production --non-interactive --auto-submit
+
+      - name: Publish OTA update (production channel)
+        working-directory: apps/app-one
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas-cli update --channel production --environment production --message "${{ github.ref_name }}" --non-interactive

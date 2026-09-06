@@ -51,11 +51,12 @@ jobs:
   eas-build:
     needs: [validate, check-eas-token]
     runs-on: ubuntu-latest
-    # Requires a user-provisioned EAS project (`eas build:configure`, which
-    # creates apps/app-one/eas.json with build profiles) and an EXPO_TOKEN
-    # repo secret — neither can be created on the user's behalf. Until both
-    # exist this job is skipped rather than failing the workflow. (A job-level
-    # `if` can't reference `secrets` directly, hence the check-eas-token job.)
+    # Requires a user-provisioned EAS project (`eas init`, which populates
+    # app.json's extra.eas.projectId — currently a REPLACE_WITH_EAS_PROJECT_ID
+    # placeholder) and an EXPO_TOKEN repo secret — neither can be created on
+    # the user's behalf. Until both exist this job is skipped rather than
+    # failing the workflow. (A job-level `if` can't reference `secrets`
+    # directly, hence the check-eas-token job.)
     if: ${{ needs.check-eas-token.outputs.has-token == 'true' }}
     steps:
       - uses: actions/checkout@v4
@@ -75,3 +76,9 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: npx eas-cli build --platform all --profile preview --non-interactive --no-wait
+
+      - name: Publish OTA update (preview channel)
+        working-directory: apps/app-one
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas-cli update --channel preview --environment preview --message "${{ github.sha }}" --non-interactive
